@@ -19,17 +19,20 @@
  */
 package org.neo4j.kernel.impl.store;
 
+import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.neo4j.graphdb.mockfs.EphemeralFileSystemAbstraction;
+import org.neo4j.helpers.Pair;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.core.JumpingIdGeneratorFactory;
@@ -38,13 +41,20 @@ import org.neo4j.kernel.impl.store.record.PropertyBlock;
 import org.neo4j.kernel.impl.store.record.PropertyKeyTokenRecord;
 import org.neo4j.kernel.impl.store.record.PropertyRecord;
 import org.neo4j.logging.NullLogProvider;
-import org.neo4j.test.EphemeralFileSystemRule;
+import org.neo4j.test.DefaultFileSystemRule;
 import org.neo4j.test.PageCacheRule;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class PropertyStoreTest
 {
@@ -52,68 +62,95 @@ public class PropertyStoreTest
     public static PageCacheRule pageCacheRule = new PageCacheRule( false );
 
     @Rule
-    public final EphemeralFileSystemRule fsRule = new EphemeralFileSystemRule();
-    private EphemeralFileSystemAbstraction fileSystemAbstraction;
-    private File path;
+    public final DefaultFileSystemRule fsRule = new DefaultFileSystemRule();
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    private DynamicStringStore dynamicStringStore;
+    private PropertyStore propertyStore;
+    private DynamicArrayStore dynamicArrayStore;
 
     @Before
-    public void setup() throws IOException
+    public void setUp() throws IOException
     {
-        fileSystemAbstraction = fsRule.get();
-        path = new File( "/tmp/foobar" );
+        PageCache pageCache = pageCacheRule.getPageCache( fsRule.get() );
+        dynamicStringStore = mock( DynamicStringStore.class );
+        dynamicArrayStore = mock( DynamicArrayStore.class );
+        File propertyFile = temporaryFolder.newFile( PropertyStore.TYPE_DESCRIPTOR );
 
-        fileSystemAbstraction.mkdir( path.getParentFile() );
+        propertyStore = new PropertyStore( propertyFile, new Config(), new
+                JumpingIdGeneratorFactory( 1 ), pageCache, NullLogProvider.getInstance(),
+                dynamicStringStore, mock( PropertyKeyTokenStore.class ), dynamicArrayStore,
+                StoreVersionMismatchHandler.FORCE_CURRENT_VERSION );
+        propertyStore.initialise( true );
+        propertyStore.makeStoreOk();
+    }
+
+    @After
+    public void tearDown()
+    {
+        propertyStore.close();
+    }
+
+    @Test
+    public void readingEmptyStringFromPropertyBlock()
+    {
+        PropertyBlock propertyBlock = new PropertyBlock();
+        PropertyType testPropertyType = PropertyType.STRING;
+        PropertyStore.setSingleBlockValue( propertyBlock, 1, testPropertyType, 0 );
+
+        AbstractDynamicStore.DynamicRecordCursor recordCursor = mock( AbstractDynamicStore.DynamicRecordCursor.class );
+        when( dynamicStringStore.getRecordsCursor( anyLong(), anyBoolean() ) ).thenReturn( recordCursor );
+        when( dynamicStringStore.readFullByteArray( anyListOf( DynamicRecord.class ), eq( testPropertyType ) ) )
+                .thenReturn( Pair.<byte[],byte[]>empty() );
+
+        assertEquals( StringUtils.EMPTY, propertyStore.getStringFor( propertyBlock ) );
+    }
+
+    @Test
+    public void readingNullArrayFromPropertyBlock()
+    {
+        PropertyBlock propertyBlock = new PropertyBlock();
+        PropertyType testPropertyType = PropertyType.ARRAY;
+        PropertyStore.setSingleBlockValue( propertyBlock, 1, testPropertyType, 0 );
+
+        AbstractDynamicStore.DynamicRecordCursor recordCursor = mock( AbstractDynamicStore.DynamicRecordCursor.class );
+        when( dynamicArrayStore.getRecordsCursor( anyLong(), anyBoolean() ) ).thenReturn( recordCursor );
+        when( dynamicArrayStore.readFullByteArray( anyListOf( DynamicRecord.class ), eq( testPropertyType ) ) )
+                .thenReturn( Pair.<byte[],byte[]>empty() );
+
+        assertNull( propertyStore.getArrayFor( propertyBlock ) );
     }
 
     @Test
     public void shouldWriteOutTheDynamicChainBeforeUpdatingThePropertyRecord() throws IOException
     {
-        // given
-        PageCache pageCache = pageCacheRule.getPageCache( fileSystemAbstraction );
-        Config config = new Config();
-        config.setProperty( PropertyStore.Configuration.rebuild_idgenerators_fast.name(), "true" );
+        final long propertyRecordId = propertyStore.nextId();
 
-        DynamicStringStore stringPropertyStore = mock( DynamicStringStore.class );
+        PropertyRecord record = new PropertyRecord( propertyRecordId );
+        record.setInUse( true );
 
-        final PropertyStore store = new PropertyStore( path, config, new JumpingIdGeneratorFactory( 1 ), pageCache,
-                NullLogProvider.getInstance(),
-                stringPropertyStore, mock( PropertyKeyTokenStore.class ), mock( DynamicArrayStore.class ),
-                StoreVersionMismatchHandler.FORCE_CURRENT_VERSION );
-        store.initialise( true );
+        DynamicRecord dynamicRecord = dynamicRecord();
+        PropertyBlock propertyBlock = propertyBlockWith( dynamicRecord );
+        record.setPropertyBlock( propertyBlock );
 
-        try
+        doAnswer( new Answer()
         {
-            store.makeStoreOk();
-            final long propertyRecordId = store.nextId();
-
-            PropertyRecord record = new PropertyRecord( propertyRecordId );
-            record.setInUse( true );
-
-            DynamicRecord dynamicRecord = dynamicRecord();
-            PropertyBlock propertyBlock = propertyBlockWith( dynamicRecord );
-            record.setPropertyBlock( propertyBlock );
-
-            doAnswer( new Answer()
+            @Override
+            public Object answer( InvocationOnMock invocation ) throws Throwable
             {
-                @Override
-                public Object answer( InvocationOnMock invocation ) throws Throwable
-                {
-                    PropertyRecord recordBeforeWrite = store.forceGetRecord( propertyRecordId );
-                    assertFalse( recordBeforeWrite.inUse() );
-                    return null;
-                }
-            } ).when( stringPropertyStore ).updateRecord( dynamicRecord );
+                PropertyRecord recordBeforeWrite = propertyStore.forceGetRecord( propertyRecordId );
+                assertFalse( recordBeforeWrite.inUse() );
+                return null;
+            }
+        } ).when( dynamicStringStore ).updateRecord( dynamicRecord );
 
-            // when
-            store.updateRecord( record );
+        // when
+        propertyStore.updateRecord( record );
 
-            // then verify that our mocked method above, with the assert, was actually called
-            verify( stringPropertyStore ).updateRecord( dynamicRecord );
-        }
-        finally
-        {
-            store.close();
-        }
+        // then verify that our mocked method above, with the assert, was actually called
+        verify( dynamicStringStore ).updateRecord( dynamicRecord );
+
     }
 
     private DynamicRecord dynamicRecord()
@@ -129,10 +166,8 @@ public class PropertyStoreTest
         PropertyBlock propertyBlock = new PropertyBlock();
 
         PropertyKeyTokenRecord key = new PropertyKeyTokenRecord( 10 );
-        propertyBlock.setSingleBlock( key.getId() | (((long) PropertyType.STRING.intValue()) << 24) | (dynamicRecord
-                .getId() << 28) );
+        PropertyStore.setSingleBlockValue( propertyBlock, key.getId(), PropertyType.STRING, dynamicRecord.getId() );
         propertyBlock.addValueRecord( dynamicRecord );
-
 
         return propertyBlock;
     }

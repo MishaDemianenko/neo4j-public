@@ -19,6 +19,9 @@
  */
 package org.neo4j.kernel.impl.store;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -626,25 +629,19 @@ public class PropertyStore extends AbstractRecordStore<PropertyRecord>
     public String getStringFor( PropertyBlock propertyBlock )
     {
         ensureHeavy( propertyBlock );
-        return getStringFor( propertyBlock.getValueRecords() );
-    }
-
-    public String getStringFor( Collection<DynamicRecord> dynamicRecords )
-    {
-        Pair<byte[], byte[]> source = stringPropertyStore.readFullByteArray( dynamicRecords, PropertyType.STRING );
+        Pair<byte[],byte[]> source =
+                stringPropertyStore.readFullByteArray( propertyBlock.getValueRecords(), PropertyType.STRING );
         // A string doesn't have a header in the data array
-        return decodeString( source.other() );
+        byte[] stringData = source.other();
+        return ArrayUtils.isNotEmpty( stringData ) ? decodeString( stringData ) : StringUtils.EMPTY;
     }
 
     public Object getArrayFor( PropertyBlock propertyBlock )
     {
         ensureHeavy( propertyBlock );
-        return getArrayFor( propertyBlock.getValueRecords() );
-    }
-
-    public Object getArrayFor( Iterable<DynamicRecord> records )
-    {
-        return getRightArray( arrayPropertyStore.readFullByteArray( records, PropertyType.ARRAY ) );
+        Pair<byte[],byte[]> dataPair = arrayPropertyStore.readFullByteArray( propertyBlock.getValueRecords(),
+                PropertyType.ARRAY );
+        return Pair.empty().equals( dataPair ) ? null : getRightArray( dataPair );
     }
 
     public int getStringBlockSize()

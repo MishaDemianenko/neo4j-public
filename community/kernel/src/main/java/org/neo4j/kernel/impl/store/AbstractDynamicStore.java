@@ -205,6 +205,10 @@ public abstract class AbstractDynamicStore extends CommonAbstractStore implement
     public static Pair<byte[], byte[]> readFullByteArrayFromHeavyRecords(
             Iterable<DynamicRecord> records, PropertyType propertyType )
     {
+        if ( !records.iterator().hasNext() )
+        {
+            return Pair.empty();
+        }
         byte[] header = null;
         List<byte[]> byteList = new ArrayList<>();
         int totalSize = 0, i = 0;
