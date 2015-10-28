@@ -24,13 +24,13 @@ import org.neo4j.kernel.impl.store.kvstore.ReadableBuffer;
 import org.neo4j.kernel.impl.store.kvstore.WritableBuffer;
 import org.neo4j.kernel.impl.transaction.log.TransactionIdStore;
 
-final class FileVersion
+public final class FileVersion
 {
     static final long INITIAL_TX_ID = TransactionIdStore.BASE_TX_ID;
     static final int INITIAL_MINOR_VERSION = 0;
     final long txId;
     final long minorVersion;
-    static final HeaderField<FileVersion> FILE_VERSION = new HeaderField<FileVersion>()
+    public static final HeaderField<FileVersion> FILE_VERSION = new HeaderField<FileVersion>()
     {
         @Override
         public FileVersion read( ReadableBuffer header )

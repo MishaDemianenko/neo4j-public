@@ -61,6 +61,7 @@ import org.neo4j.kernel.impl.store.id.IdGeneratorImpl;
 import org.neo4j.kernel.impl.transaction.CommittedTransactionRepresentation;
 import org.neo4j.kernel.impl.transaction.log.MissingLogDataException;
 import org.neo4j.kernel.impl.transaction.log.TransactionIdStore;
+import org.neo4j.kernel.impl.util.StoreUtil;
 import org.neo4j.kernel.monitoring.ByteCounterMonitor;
 import org.neo4j.kernel.monitoring.Monitors;
 import org.neo4j.logging.FormattedLogProvider;
@@ -126,7 +127,7 @@ class BackupService
     BackupOutcome doFullBackup( final String sourceHostNameOrIp, final int sourcePort, File targetDirectory,
             ConsistencyCheck consistencyCheck, Config tuningConfiguration, final long timeout, final boolean forensics )
     {
-        if ( directoryContainsDb( targetDirectory ) )
+        if ( StoreUtil.directoryContainsDb( fileSystem, targetDirectory ) )
         {
             throw new RuntimeException( targetDirectory + " already contains a database" );
         }
@@ -181,7 +182,7 @@ class BackupService
     BackupOutcome doIncrementalBackup( String sourceHostNameOrIp, int sourcePort, File targetDirectory, long timeout,
             Config config ) throws IncrementalBackupNotPossibleException
     {
-        if ( !directoryContainsDb( targetDirectory ) )
+        if ( !StoreUtil.directoryContainsDb( fileSystem, targetDirectory ) )
         {
             throw new RuntimeException( targetDirectory + " doesn't contain a database" );
         }
@@ -223,7 +224,7 @@ class BackupService
     BackupOutcome doIncrementalBackupOrFallbackToFull( String sourceHostNameOrIp, int sourcePort, File targetDirectory,
             ConsistencyCheck consistencyCheck, Config config, long timeout, boolean forensics )
     {
-        if ( !directoryContainsDb( targetDirectory ) )
+        if ( !StoreUtil.directoryContainsDb( fileSystem, targetDirectory ) )
         {
             return doFullBackup( sourceHostNameOrIp, sourcePort, targetDirectory, consistencyCheck, config, timeout,
                     forensics );
@@ -261,11 +262,6 @@ class BackupService
         TransactionIdStore transactionIdStore = graphDb.getDependencyResolver().resolveDependency(
                 TransactionIdStore.class );
         return anonymous( transactionIdStore.getLastCommittedTransactionId() );
-    }
-
-    boolean directoryContainsDb( File targetDirectory )
-    {
-        return fileSystem.fileExists( new File( targetDirectory, MetaDataStore.DEFAULT_NAME ) );
     }
 
     static GraphDatabaseAPI startTemporaryDb( File targetDirectory, PageCache pageCache, Map<String,String> config )

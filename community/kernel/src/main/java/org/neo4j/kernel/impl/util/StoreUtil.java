@@ -23,12 +23,19 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
+import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.fs.FileUtils;
+import org.neo4j.kernel.impl.store.MetaDataStore;
 
 public class StoreUtil
 {
     // Branched directories will end up in <dbStoreDir>/branched/<timestamp>/
     public final static String BRANCH_SUBDIRECTORY = "branched";
+
+    public static boolean directoryContainsDb( final FileSystemAbstraction fileSystem, File targetDirectory )
+    {
+        return fileSystem.fileExists( new File( targetDirectory, MetaDataStore.DEFAULT_NAME ) );
+    }
 
     public static void cleanStoreDir( File storeDir ) throws IOException
     {

@@ -5,19 +5,19 @@
  * This file is part of Neo4j.
  *
  * Neo4j is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.store.counts;
+package org.neo4j.tools.dump;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +36,8 @@ import org.neo4j.kernel.impl.core.Token;
 import org.neo4j.kernel.impl.store.NeoStores;
 import org.neo4j.kernel.impl.store.StoreFactory;
 import org.neo4j.kernel.impl.store.TokenStore;
+import org.neo4j.kernel.impl.store.counts.CountsTracker;
+import org.neo4j.kernel.impl.store.counts.FileVersion;
 import org.neo4j.kernel.impl.store.kvstore.Headers;
 import org.neo4j.kernel.impl.store.kvstore.MetadataVisitor;
 import org.neo4j.kernel.impl.store.kvstore.ReadableBuffer;
@@ -118,8 +120,7 @@ public class DumpCountsStore implements CountsVisitor, MetadataVisitor, UnknownK
     {
         FileVersion versionData = headers.get( FileVersion.FILE_VERSION );
         out.printf( "Counts Store:\t%s%n", path );
-        out.printf( "\ttxId:\t%d%n", versionData.txId );
-        out.printf( "\tminor version:\t%d%n", versionData.minorVersion );
+        out.println( versionData.toString() );
         out.printf( "\tentries:\t%d%n", entryCount );
         out.println( "Entries:" );
     }

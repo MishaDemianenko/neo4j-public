@@ -223,7 +223,7 @@ public class CountsTracker extends AbstractKeyValueStore<CountsKey>
         }
     }
 
-    void visitFile( File path, CountsVisitor visitor ) throws IOException
+    public void visitFile( File path, CountsVisitor visitor ) throws IOException
     {
         super.visitFile( path, new DelegatingVisitor( visitor ) );
     }
