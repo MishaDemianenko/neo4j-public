@@ -222,7 +222,7 @@ public class WriteTransactionCommandOrderingTest
         }
 
         @Override
-        protected void loadStorage()
+        public void loadStorage()
         {
         }
     }
@@ -249,7 +249,7 @@ public class WriteTransactionCommandOrderingTest
         }
 
         @Override
-        protected void loadStorage()
+        public void loadStorage()
         {
         }
 
@@ -284,7 +284,7 @@ public class WriteTransactionCommandOrderingTest
         }
 
         @Override
-        protected void loadStorage()
+        public void loadStorage()
         {
         }
     }

@@ -37,10 +37,11 @@ import static org.neo4j.unsafe.impl.batchimport.staging.Step.ORDER_SEND_DOWNSTRE
  */
 public class RelationshipStage extends Stage
 {
+
     public RelationshipStage( Configuration config, IoMonitor writeMonitor,
             InputIterable<InputRelationship> relationships, IdMapper idMapper,
             BatchingNeoStores neoStore, NodeRelationshipCache cache, boolean specificIds,
-            EntityStoreUpdaterStep.Monitor storeUpdateMonitor )
+            EntityStoreUpdaterStep.Monitor storeUpdateMonitor, long firstRecordId )
     {
         super( "Relationships", config, ORDER_SEND_DOWNSTREAM | ORDER_PROCESS );
         add( new InputIteratorBatcherStep<>( control(), config, relationships.iterator(), InputRelationship.class ) );
@@ -49,7 +50,7 @@ public class RelationshipStage extends Stage
         PropertyStore propertyStore = neoStore.getPropertyStore();
         add( new RelationshipPreparationStep( control(), config, idMapper ) );
         add( new PropertyEncoderStep<>( control(), config, neoStore.getPropertyKeyRepository(), propertyStore ) );
-        add( new ParallelizeByNodeIdStep( control(), config ) );
+        add( new ParallelizeByNodeIdStep( control(), config, firstRecordId ) );
         add( new RelationshipEncoderStep( control(), config,
                 neoStore.getRelationshipTypeRepository(), cache, specificIds ) );
         add( new EntityStoreUpdaterStep<>( control(), config,

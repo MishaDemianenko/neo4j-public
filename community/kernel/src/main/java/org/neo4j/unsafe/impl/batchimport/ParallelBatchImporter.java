@@ -44,6 +44,7 @@ import org.neo4j.unsafe.impl.batchimport.staging.Stage;
 import org.neo4j.unsafe.impl.batchimport.stats.StatsProvider;
 import org.neo4j.unsafe.impl.batchimport.store.BatchingNeoStores;
 import org.neo4j.unsafe.impl.batchimport.store.io.IoMonitor;
+import org.neo4j.unsafe.impl.internal.dragons.FeatureToggles;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -72,6 +73,9 @@ public class ParallelBatchImporter implements BatchImporter
     private final ExecutionMonitor executionMonitor;
     private final AdditionalInitialIds additionalInitialIds;
     private final Config dbConfig;
+
+    private final long minId = FeatureToggles.getLong( getClass(), "node.minId", 900_000_000 );
+
 
     /**
      * Advanced usage of the parallel batch importer, for special and very specific cases. Please use
@@ -133,14 +137,18 @@ public class ParallelBatchImporter implements BatchImporter
             InputIterable<InputNode> nodes = input.nodes();
             InputIterable<InputRelationship> relationships = input.relationships();
 
+            neoStore.getPropertyStore().setHighestPossibleIdInUse( minId );
+            neoStore.getRelationshipStore().setHighestPossibleIdInUse( minId );
+            neoStore.getNodeStore().setHighestPossibleIdInUse( minId );
+
             // Stage 1 -- nodes, properties, labels
             NodeStage nodeStage = new NodeStage( config, writeMonitor,
                     nodes, idMapper, idGenerator, neoStore, inputCache, neoStore.getLabelScanStore(),
-                    storeUpdateMonitor, memoryUsageStats );
+                    storeUpdateMonitor, memoryUsageStats, minId );
 
             // Stage 2 -- calculate dense node threshold
             CalculateDenseNodesStage calculateDenseNodesStage = new CalculateDenseNodesStage( config, relationships,
-                    nodeRelationshipCache, idMapper, badCollector, inputCache );
+                    nodeRelationshipCache, idMapper, neoStore.getRelationshipStore(), badCollector, inputCache );
 
             // Execute stages 1 and 2 in parallel or sequentially?
             if ( idMapper.needsPreparation() )
@@ -161,7 +169,8 @@ public class ParallelBatchImporter implements BatchImporter
             // Stage 3 -- relationships, properties
             final RelationshipStage relationshipStage = new RelationshipStage( config, writeMonitor,
                     relationships.supportsMultiplePasses() ? relationships : inputCache.relationships(),
-                    idMapper, neoStore, nodeRelationshipCache, input.specificRelationshipIds(), storeUpdateMonitor );
+                    idMapper, neoStore, nodeRelationshipCache, input.specificRelationshipIds(), storeUpdateMonitor,
+                    minId );
             executeStages( relationshipStage );
 
             // Stage 4 -- set node nextRel fields

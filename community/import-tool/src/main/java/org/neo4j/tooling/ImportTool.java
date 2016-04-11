@@ -92,7 +92,7 @@ import static org.neo4j.unsafe.impl.batchimport.input.csv.DataFactories.defaultF
  */
 public class ImportTool
 {
-    enum Options
+    public enum Options
     {
         STORE_DIR( "into", null,
                 "<store-dir>",
@@ -215,7 +215,7 @@ public class ImportTool
             this.keyAndUsageGoTogether = keyAndUsageGoTogether;
         }
 
-        String key()
+        public String key()
         {
             return key;
         }

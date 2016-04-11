@@ -59,12 +59,13 @@ public class CsvDataGenerator<NODEFORMAT,RELFORMAT>
     private final Function<SourceTraceability,Deserialization<RELFORMAT>> relDeserialization;
     private final int numberOfLabels;
     private final int numberOfRelationshipTypes;
+    private long minId;
 
     public CsvDataGenerator( Header nodeHeader, Header relationshipHeader, Configuration config,
             long nodes, long relationships,
             Function<SourceTraceability,Deserialization<NODEFORMAT>> nodeDeserialization,
             Function<SourceTraceability,Deserialization<RELFORMAT>> relDeserialization,
-            int numberOfLabels, int numberOfRelationshipTypes )
+            int numberOfLabels, int numberOfRelationshipTypes, long minId )
     {
         this.nodeHeader = nodeHeader;
         this.relationshipHeader = relationshipHeader;
@@ -75,6 +76,7 @@ public class CsvDataGenerator<NODEFORMAT,RELFORMAT>
         this.relDeserialization = relDeserialization;
         this.numberOfLabels = numberOfLabels;
         this.numberOfRelationshipTypes = numberOfRelationshipTypes;
+        this.minId = minId;
         this.nodesSeed = currentTimeMillis();
         this.relationshipsSeed = nodesSeed+1;
     }
@@ -123,13 +125,13 @@ public class CsvDataGenerator<NODEFORMAT,RELFORMAT>
     public InputIterator<NODEFORMAT> nodeData()
     {
         return new RandomDataIterator<>( nodeHeader, nodes, new Random( nodesSeed ), nodeDeserialization, nodes,
-                numberOfLabels, numberOfRelationshipTypes );
+                numberOfLabels, numberOfRelationshipTypes , minId);
     }
 
     public InputIterator<RELFORMAT> relationshipData()
     {
         return new RandomDataIterator<>( relationshipHeader, relationships, new Random( relationshipsSeed ),
-                relDeserialization, nodes, numberOfLabels, numberOfRelationshipTypes );
+                relDeserialization, nodes, numberOfLabels, numberOfRelationshipTypes, minId );
     }
 
     public static void main( String[] arguments ) throws IOException
@@ -152,7 +154,7 @@ public class CsvDataGenerator<NODEFORMAT,RELFORMAT>
                 nodeHeader, relationshipHeader,
                 config, nodeCount, relationshipCount,
                 deserialization, deserialization,
-                labelCount, relationshipTypeCount );
+                labelCount, relationshipTypeCount, 0 );
         writeData( generator.serializeNodeHeader(), generator.nodeData(),
                 new File( "target", "nodes.csv" ), progress );
         writeData( generator.serializeRelationshipHeader(), generator.relationshipData(),
@@ -184,6 +186,7 @@ public class CsvDataGenerator<NODEFORMAT,RELFORMAT>
         return new Header( new Entry[] {
                 new Entry( null, Type.START_ID, null, idType.extractor( extractors ) ),
                 new Entry( null, Type.END_ID, null, idType.extractor( extractors ) ),
+                new Entry( "data", Type.PROPERTY, null, extractors.string() ),
                 new Entry( null, Type.TYPE, null, extractors.string() )
         } );
     }

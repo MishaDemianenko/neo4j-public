@@ -49,12 +49,14 @@ public class RandomDataIterator<T> extends PrefetchingIterator<T> implements Inp
     private final Distribution<String> relationshipTypes;
     private final String sourceDescription;
 
+    private final long minId;
+
     private long cursor;
     private long position;
 
     public RandomDataIterator( Header header, long limit, Random random,
             Function<SourceTraceability,Deserialization<T>> deserialization, long nodeCount,
-            int labelCount, int relationshipTypeCount )
+            int labelCount, int relationshipTypeCount, long minId )
     {
         this.header = header;
         this.limit = limit;
@@ -65,6 +67,7 @@ public class RandomDataIterator<T> extends PrefetchingIterator<T> implements Inp
         this.labels = new Distribution<>( tokens( "Label", labelCount ) );
         this.relationshipTypes = new Distribution<>( tokens( "TYPE", relationshipTypeCount ) );
         this.sourceDescription = getClass().getSimpleName() + ":" + header;
+        this.minId = minId;
 
         this.deserialization.initialize();
     }
@@ -135,8 +138,8 @@ public class RandomDataIterator<T> extends PrefetchingIterator<T> implements Inp
     {
         switch ( entry.extractor().toString() )
         {
-        case "String": return "" + id;
-        case "long": return id;
+        case "String": return "" + id + minId;
+        case "long": return id + minId;
         default: throw new IllegalArgumentException( entry.toString() );
         }
     }

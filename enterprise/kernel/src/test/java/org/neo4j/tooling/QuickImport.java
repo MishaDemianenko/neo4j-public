@@ -19,10 +19,13 @@
  */
 package org.neo4j.tooling;
 
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
+import org.neo4j.consistency.ConsistencyCheckTool;
 import org.neo4j.csv.reader.CharSeeker;
 import org.neo4j.csv.reader.CharSeekers;
 import org.neo4j.csv.reader.Extractors;
@@ -32,6 +35,7 @@ import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.logging.SimpleLogService;
 import org.neo4j.logging.FormattedLogProvider;
 import org.neo4j.unsafe.impl.batchimport.BatchImporter;
+import org.neo4j.unsafe.impl.batchimport.Configuration.Default;
 import org.neo4j.unsafe.impl.batchimport.ParallelBatchImporter;
 import org.neo4j.unsafe.impl.batchimport.input.Groups;
 import org.neo4j.unsafe.impl.batchimport.input.Input;
@@ -40,9 +44,6 @@ import org.neo4j.unsafe.impl.batchimport.input.csv.Header;
 import org.neo4j.unsafe.impl.batchimport.input.csv.IdType;
 
 import static org.neo4j.graphdb.factory.GraphDatabaseSettings.dense_node_threshold;
-
-import org.neo4j.unsafe.impl.batchimport.Configuration.Default;
-
 import static org.neo4j.kernel.configuration.Settings.parseLongWithUnit;
 import static org.neo4j.tooling.CsvDataGenerator.bareboneNodeHeader;
 import static org.neo4j.tooling.CsvDataGenerator.bareboneRelationshipHeader;
@@ -68,6 +69,13 @@ import static org.neo4j.unsafe.impl.batchimport.staging.ExecutionMonitors.defaul
  */
 public class QuickImport
 {
+
+    @Test
+    public void checkConsistency() throws IOException
+    {
+        ConsistencyCheckTool.main( new String[]{"/Users/misha/Data/testStoreDir"} );
+    }
+
     public static void main( String[] arguments ) throws IOException
     {
         Args args = Args.parse( arguments );
@@ -101,7 +109,7 @@ public class QuickImport
         Input input = new CsvDataGeneratorInput(
                 nodeHeader, relationshipHeader,
                 COMMAS, nodeCount, relationshipCount, new Groups(), idType, labelCount, relationshipTypeCount,
-                silentBadCollector( 0 ));
+                silentBadCollector( 0 ), 900_000_000);
         BatchImporter importer = new ParallelBatchImporter( dir, importConfig,
                 new SimpleLogService( sysoutLogProvider, sysoutLogProvider ), defaultVisible(), Config.defaults() );
         importer.doImport( input );
@@ -112,7 +120,7 @@ public class QuickImport
         String definition = args.get( "node-header", null );
         if ( definition == null )
         {
-            return bareboneNodeHeader( idType, extractors );
+            return CsvDataGenerator.bareboneNodeHeader( idType, extractors );
         }
 
         Configuration config = Configuration.COMMAS;
@@ -124,7 +132,7 @@ public class QuickImport
         String definition = args.get( "relationship-header", null );
         if ( definition == null )
         {
-            return bareboneRelationshipHeader( idType, extractors );
+            return CsvDataGenerator.bareboneRelationshipHeader( idType, extractors );
         }
 
         Configuration config = Configuration.COMMAS;

@@ -49,13 +49,14 @@ public class NodeEncoderStepTest
     private final BatchingLabelTokenRepository tokenRepository = new BatchingLabelTokenRepository( tokenStore );
     private final NodeStore nodeStore = mock( NodeStore.class );
     private final CapturingSender sender = new CapturingSender();
+    private final long nodeMinId = 0;
 
     @Test
     public void shouldNotAssignLabelsForNodesWithJustLabelField() throws Exception
     {
         // GIVEN
         NodeEncoderStep step = new NodeEncoderStep( control, DEFAULT, actual(), fromInput(), tokenRepository,
-                nodeStore, mock( StatsProvider.class ) );
+                nodeStore, mock( StatsProvider.class ), nodeMinId );
 
         // WHEN
         InputNode node = new InputNode( "source", 0, 0, 0L, NO_PROPERTIES, null, null, 1L );
@@ -73,7 +74,7 @@ public class NodeEncoderStepTest
     {
         // GIVEN
         NodeEncoderStep step = new NodeEncoderStep( control, DEFAULT, actual(), fromInput(), tokenRepository,
-                nodeStore, mock( StatsProvider.class ) );
+                nodeStore, mock( StatsProvider.class ), nodeMinId );
 
         // WHEN
         InputNode node = new InputNode( "source", 0, 0, 0L, NO_PROPERTIES, null, NO_LABELS, null );
@@ -91,7 +92,7 @@ public class NodeEncoderStepTest
     {
         // GIVEN
         NodeEncoderStep step = new NodeEncoderStep( control, DEFAULT, actual(), fromInput(), tokenRepository,
-                nodeStore, mock( StatsProvider.class ) );
+                nodeStore, mock( StatsProvider.class ), nodeMinId );
 
         // WHEN
         InputNode node = new InputNode( "source", 0, 0, 0L, NO_PROPERTIES, null, new String[] {"one", "two"}, null );

@@ -46,7 +46,7 @@ public class NodeStage extends Stage
             InputIterable<InputNode> nodes, IdMapper idMapper, IdGenerator idGenerator,
             BatchingNeoStores neoStore, InputCache inputCache, LabelScanStore labelScanStore,
             EntityStoreUpdaterStep.Monitor storeUpdateMonitor,
-            StatsProvider memoryUsage ) throws IOException
+            StatsProvider memoryUsage, long nodeMinId ) throws IOException
     {
         super( "Nodes", config, ORDER_SEND_DOWNSTREAM );
         add( new InputIteratorBatcherStep<>( control(), config, nodes.iterator(), InputNode.class ) );
@@ -59,7 +59,7 @@ public class NodeStage extends Stage
         PropertyStore propertyStore = neoStore.getPropertyStore();
         add( new PropertyEncoderStep<>( control(), config, neoStore.getPropertyKeyRepository(), propertyStore ) );
         add( new NodeEncoderStep( control(), config, idMapper, idGenerator,
-                neoStore.getLabelRepository(), nodeStore, memoryUsage ) );
+                neoStore.getLabelRepository(), nodeStore, memoryUsage , nodeMinId) );
         add( new LabelScanStorePopulationStep( control(), config, labelScanStore ) );
         add( new EntityStoreUpdaterStep<>( control(), config, nodeStore, propertyStore,
                 writeMonitor, storeUpdateMonitor ) );

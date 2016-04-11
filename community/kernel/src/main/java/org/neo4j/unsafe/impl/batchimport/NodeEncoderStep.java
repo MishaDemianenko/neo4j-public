@@ -47,18 +47,20 @@ public final class NodeEncoderStep extends ProcessorStep<Batch<InputNode,NodeRec
     private final IdGenerator idGenerator;
     private final NodeStore nodeStore;
     private final BatchingLabelTokenRepository labelHolder;
+    private long nodeMinId;
 
     public NodeEncoderStep( StageControl control, Configuration config,
             IdMapper idMapper, IdGenerator idGenerator,
             BatchingLabelTokenRepository labelHolder,
             NodeStore nodeStore,
-            StatsProvider memoryUsageStats )
+            StatsProvider memoryUsageStats, long nodeMinId )
     {
         super( control, "NODE", config, 1, memoryUsageStats );
         this.idMapper = idMapper;
         this.idGenerator = idGenerator;
         this.nodeStore = nodeStore;
         this.labelHolder = labelHolder;
+        this.nodeMinId = nodeMinId;
     }
 
     @Override
@@ -70,7 +72,7 @@ public final class NodeEncoderStep extends ProcessorStep<Batch<InputNode,NodeRec
         for ( int i = 0; i < input.length; i++ )
         {
             InputNode batchNode = input[i];
-            long nodeId = idGenerator.generate( batchNode.id() );
+            long nodeId = idGenerator.generate( batchNode.id() ); //+ nodeMinId;
             if ( batchNode.id() != null )
             {
                 // Nodes are allowed to be anonymous, they just can't be found when creating relationships

@@ -265,7 +265,7 @@ public abstract class CommonAbstractStore<RECORD extends AbstractBaseRecord,HEAD
      * be accessed directly until it has been unmapped - the store file must only be
      * accessed through the page cache.
      */
-    protected void loadStorage()
+    public void loadStorage()
     {
         try
         {
@@ -365,7 +365,7 @@ public abstract class CommonAbstractStore<RECORD extends AbstractBaseRecord,HEAD
         storeHeader = storeHeaderFormat.readHeader( cursor );
     }
 
-    private void loadIdGenerator()
+    public void loadIdGenerator()
     {
         try
         {
@@ -801,13 +801,13 @@ public abstract class CommonAbstractStore<RECORD extends AbstractBaseRecord,HEAD
         }
     }
 
-    protected int determineRecordSize()
+    public int determineRecordSize()
     {
         return recordFormat.getRecordSize( storeHeader );
     }
 
     @Override
-    public final int getRecordSize()
+    public int getRecordSize()
     {
         return recordSize;
     }

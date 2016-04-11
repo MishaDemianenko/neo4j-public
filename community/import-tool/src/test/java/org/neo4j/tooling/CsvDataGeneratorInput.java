@@ -45,12 +45,12 @@ public class CsvDataGeneratorInput extends CsvDataGenerator<InputNode,InputRelat
 
     public CsvDataGeneratorInput( final Header nodeHeader, final Header relationshipHeader,
             Configuration config, long nodes, long relationships, final Groups groups, final IdType idType,
-            int numberOfLabels, int numberOfRelationshipTypes, Collector badCollector )
+            int numberOfLabels, int numberOfRelationshipTypes, Collector badCollector, long minId )
     {
         super( nodeHeader, relationshipHeader, config, nodes, relationships,
                 source -> new InputNodeDeserialization( source, nodeHeader, groups, idType.idsAreExternal() ),
                 from -> new InputRelationshipDeserialization( from, relationshipHeader, groups ),
-                numberOfLabels, numberOfRelationshipTypes );
+                numberOfLabels, numberOfRelationshipTypes, minId );
         this.idType = idType;
         this.badCollector = badCollector;
     }
