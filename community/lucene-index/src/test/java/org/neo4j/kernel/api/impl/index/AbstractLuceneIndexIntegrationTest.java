@@ -21,7 +21,7 @@ package org.neo4j.kernel.api.impl.index;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.index.IndexWriter;
@@ -165,7 +165,7 @@ public class AbstractLuceneIndexIntegrationTest
     {
         Document document = new Document();
         document.add( new TextField( "text", "textValue", Field.Store.YES ) );
-        document.add( new LegacyLongField( "long", 1, Field.Store.YES ) );
+        document.add( new LongPoint( "long", 1 ) );
         return document;
     }
 

@@ -21,6 +21,7 @@ package org.neo4j.kernel.api.impl.schema;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StringField;
@@ -34,7 +35,6 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.PrefixQuery;
@@ -44,8 +44,6 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.LegacyNumericUtils;
-import org.apache.lucene.util.NumericUtils;
 import org.apache.lucene.util.StringHelper;
 
 import java.io.IOException;
@@ -103,7 +101,7 @@ public class LuceneDocumentStructure
     {
         ValueEncoding encoding = ValueEncoding.forValue( value );
         Field field = encoding.encodeField( value );
-        return field.stringValue();
+        return field instanceof DoublePoint ? String.valueOf( field.numericValue() ) : field.stringValue();
     }
 
     public static MatchAllDocsQuery newScanQuery()
@@ -121,11 +119,11 @@ public class LuceneDocumentStructure
      * Range queries are always inclusive, in order to do exclusive range queries the result must be filtered after the
      * fact. The reason we can't do inclusive range queries is that longs are coerced to doubles in the index.
      */
-    public static LegacyNumericRangeQuery<Double> newInclusiveNumericRangeSeekQuery( Number lower, Number upper )
+    public static Query newInclusiveNumericRangeSeekQuery( Number lower, Number upper )
     {
-        Double min = lower != null ? lower.doubleValue() : null;
-        Double max = upper != null ? upper.doubleValue() : null;
-        return LegacyNumericRangeQuery.newDoubleRange( ValueEncoding.Number.key(), min, max, true, true );
+        Double min = lower != null ? lower.doubleValue() : Double.NEGATIVE_INFINITY;
+        Double max = upper != null ? upper.doubleValue() : Double.POSITIVE_INFINITY;
+        return DoublePoint.newRangeQuery( ValueEncoding.Number.key(), min, max );
     }
 
     public static Query newRangeSeekByStringQuery( String lower, boolean includeLower,
@@ -187,29 +185,6 @@ public class LuceneDocumentStructure
     public static long getNodeId( Document from )
     {
         return Long.parseLong( from.get( NODE_ID_KEY ) );
-    }
-
-    /**
-     * Filters the given {@link Terms terms} to include only terms that were created using fields from
-     * {@link ValueEncoding#encodeField(Object)}. Internal lucene terms like those created for indexing numeric values
-     * (see javadoc for {@link LegacyNumericRangeQuery} class) are skipped. In other words this method returns
-     * {@link TermsEnum} over all terms for the given field that were created using {@link ValueEncoding}.
-     *
-     * @param terms the terms to be filtered
-     * @param fieldKey the corresponding {@link ValueEncoding#key() field key}
-     * @return terms enum over all inserted terms
-     * @throws IOException if it is not possible to obtain {@link TermsEnum}
-     * @see LegacyNumericRangeQuery
-     * @see org.apache.lucene.analysis.NumericTokenStream
-     * @see NumericUtils#PRECISION_STEP_DEFAULT
-     * @see NumericUtils#filterPrefixCodedLongs(TermsEnum)
-     */
-    public static TermsEnum originalTerms( Terms terms, String fieldKey ) throws IOException
-    {
-        TermsEnum termsEnum = terms.iterator();
-        return ValueEncoding.forKey( fieldKey ) == ValueEncoding.Number
-               ? LegacyNumericUtils.filterPrefixCodedLongs( termsEnum )
-               : termsEnum;
     }
 
     /**

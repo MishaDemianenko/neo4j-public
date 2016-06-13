@@ -19,9 +19,13 @@
  */
 package org.neo4j.kernel.api.impl.schema.sampler;
 
+import org.apache.lucene.document.DoublePoint;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PointValues;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
@@ -67,15 +71,42 @@ public class NonUniqueLuceneIndexSampler extends LuceneIndexSampler
                 Set<String> fieldNames = getFieldNamesToSample( readerContext );
                 for ( String fieldName : fieldNames )
                 {
-                    Terms terms = readerContext.reader().terms( fieldName );
-                    if ( terms != null )
+                    if ( "number".equals( fieldName ) )
                     {
-                        TermsEnum termsEnum = LuceneDocumentStructure.originalTerms( terms, fieldName );
-                        BytesRef termsRef;
-                        while ( (termsRef = termsEnum.next()) != null )
+                        PointValues pointValues = readerContext.reader().getPointValues();
+                        pointValues.intersect( fieldName, new PointValues.IntersectVisitor()
                         {
-                            sampler.include( termsRef.utf8ToString(), termsEnum.docFreq() );
-                            checkCancellation();
+                            @Override
+                            public void visit( int docID ) throws IOException
+                            {
+
+                            }
+
+                            @Override
+                            public void visit( int docID, byte[] packedValue ) throws IOException
+                            {
+                                sampler.include( DoublePoint.decodeDimension( packedValue, 0 ) + "", 1 );
+                            }
+
+                            @Override
+                            public PointValues.Relation compare( byte[] minPackedValue, byte[] maxPackedValue )
+                            {
+                                return null;
+                            }
+                        } );
+                    }
+                    else
+                    {
+                        Terms terms = readerContext.reader().terms( fieldName );
+                        if ( terms != null )
+                        {
+                            TermsEnum termsEnum = terms.iterator();
+                            BytesRef termsRef;
+                            while ( (termsRef = termsEnum.next()) != null )
+                            {
+                                sampler.include( termsRef.utf8ToString(), termsEnum.docFreq() );
+                                checkCancellation();
+                            }
                         }
                     }
                 }
@@ -91,13 +122,13 @@ public class NonUniqueLuceneIndexSampler extends LuceneIndexSampler
 
     private static Set<String> getFieldNamesToSample( LeafReaderContext readerContext ) throws IOException
     {
-        Fields fields = readerContext.reader().fields();
+        FieldInfos fieldInfos = readerContext.reader().getFieldInfos();
         Set<String> fieldNames = new HashSet<>();
-        for ( String field : fields )
+        for ( FieldInfo fieldInfo : fieldInfos )
         {
-            if ( !LuceneDocumentStructure.NODE_ID_KEY.equals( field ) )
+            if ( !LuceneDocumentStructure.NODE_ID_KEY.equals( fieldInfo.name ) )
             {
-                fieldNames.add( field );
+                fieldNames.add( fieldInfo.name );
             }
         }
         return fieldNames;

@@ -19,8 +19,13 @@
  */
 package org.neo4j.kernel.api.impl.schema.verification;
 
+import org.apache.lucene.document.DoublePoint;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PointValues;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
@@ -29,11 +34,13 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.neo4j.kernel.api.exceptions.index.IndexEntryConflictException;
 import org.neo4j.kernel.api.impl.index.partition.PartitionSearcher;
 import org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure;
+import org.neo4j.kernel.api.index.PreexistingIndexEntryConflictException;
 import org.neo4j.kernel.api.index.PropertyAccessor;
 
 /**
@@ -64,22 +71,33 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
             IndexSearcher searcher = indexSearcher();
             for ( LeafReaderContext leafReaderContext : searcher.getIndexReader().leaves() )
             {
-                Fields fields = leafReaderContext.reader().fields();
-                for ( String field : fields )
+                LeafReader reader = leafReaderContext.reader();
+                FieldInfos fieldInfos = reader.getFieldInfos();
+                for ( FieldInfo fieldInfo : fieldInfos )
                 {
-                    if ( LuceneDocumentStructure.NODE_ID_KEY.equals( field ) )
+                    if ( LuceneDocumentStructure.NODE_ID_KEY.equals( fieldInfo.name ) )
                     {
                         continue;
                     }
-
-                    TermsEnum terms = LuceneDocumentStructure.originalTerms( fields.terms( field ), field );
-                    BytesRef termsRef;
-                    while ( (termsRef = terms.next()) != null )
+                    if ( isPointValuesField( fieldInfo ) )
                     {
-                        if ( terms.docFreq() > 1 )
+                        PointValues pointValues = reader.getPointValues();
+                        pointValues.intersect( fieldInfo.name, new UniquenessIntersectVisitor( searcher,
+                                fieldInfo.getPointDimensionCount(),
+                                fieldInfo.getPointNumBytes() ) );
+                    }
+                    else
+                    {
+                        Fields fields = reader.fields();
+                        TermsEnum terms = fields.terms( fieldInfo.name ).iterator();
+                        BytesRef termsRef;
+                        while ( (termsRef = terms.next()) != null )
                         {
-                            collector.reset();
-                            searcher.search( new TermQuery( new Term( field, termsRef ) ), collector );
+                            if ( terms.docFreq() > 1 )
+                            {
+                                collector.reset();
+                                searcher.search( new TermQuery( new Term( fieldInfo.name, termsRef ) ), collector );
+                            }
                         }
                     }
                 }
@@ -94,6 +112,11 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
             }
             throw e;
         }
+    }
+
+    private boolean isPointValuesField( FieldInfo fieldInfo )
+    {
+        return (fieldInfo.getPointDimensionCount() > 0) && (fieldInfo.getPointNumBytes() > 0);
     }
 
     @Override
@@ -130,5 +153,47 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
     private IndexSearcher indexSearcher()
     {
         return partitionSearcher.getIndexSearcher();
+    }
+
+    private static class UniquenessIntersectVisitor implements PointValues.IntersectVisitor
+    {
+        private int previousDocId;
+        private byte[] buffer;
+        private final IndexSearcher searcher;
+        private final int dimensionCount;
+        private int bytesPerDimension;
+
+        public UniquenessIntersectVisitor( IndexSearcher searcher, int dimensionCount, int bytesPerDimension )
+        {
+            this.searcher = searcher;
+            this.dimensionCount = dimensionCount;
+            this.bytesPerDimension = bytesPerDimension;
+            buffer = new byte[dimensionCount * bytesPerDimension];
+        }
+
+        @Override
+        public void visit( int docID ) throws IOException
+        {
+        }
+
+        @Override
+        public void visit( int docID, byte[] packedValue ) throws IOException
+        {
+            if ( Arrays.equals( buffer, packedValue ) )
+            {
+                long nodeId = LuceneDocumentStructure.getNodeId( searcher.doc( docID ) );
+                long bufferedNodeId = LuceneDocumentStructure.getNodeId( searcher.doc( previousDocId ) );
+                throw new IOException(  new PreexistingIndexEntryConflictException( DoublePoint.decodeDimension( packedValue, 0),
+                    nodeId, bufferedNodeId ));
+            }
+            previousDocId = docID;
+            System.arraycopy( packedValue, 0, buffer, 0, packedValue.length);
+        }
+
+        @Override
+        public PointValues.Relation compare( byte[] minPackedValue, byte[] maxPackedValue )
+        {
+            return null;
+        }
     }
 }

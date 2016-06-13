@@ -41,18 +41,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class IndexReaderStub extends LeafReader
 {
 
+    private FieldInfos fieldInfos;
     private Fields fields;
     private boolean allDeleted;
     private String[] elements = new String[0];
     private Function<String,NumericDocValues> ndvs = s -> DocValues.emptyNumeric();
 
     private IOException throwOnFields;
-    private static FieldInfo DummyFieldInfo =
+    private static FieldInfo defaultFieldInfo =
             new FieldInfo( "id", 0, false, true, false, IndexOptions.DOCS,
                     DocValuesType.NONE, -1, Collections.<String,String>emptyMap(), 0, 0 );
 
@@ -65,11 +69,20 @@ public class IndexReaderStub extends LeafReader
     public IndexReaderStub( Fields fields )
     {
         this.fields = fields;
+        this.fieldInfos = buildFieldInfos( fields );
+    }
+
+    private Function<String,FieldInfo> fieldNameToFieldInfoConverter()
+    {
+        AtomicInteger counter = new AtomicInteger();
+        return field -> new FieldInfo( field, counter.getAndIncrement(), false, false, false, IndexOptions.NONE, DocValuesType.NONE,
+            -1L, Collections.emptyMap(), 0, 0 );
     }
 
     public IndexReaderStub( final NumericDocValues ndv )
     {
         this.ndvs = s -> ndv;
+        this.fieldInfos = new FieldInfos( new FieldInfo[]{defaultFieldInfo} );
     }
 
     public IndexReaderStub( final Map<String,NumericDocValues> ndvs )
@@ -158,7 +171,7 @@ public class IndexReaderStub extends LeafReader
     @Override
     public FieldInfos getFieldInfos()
     {
-        throw new RuntimeException( "Not yet implemented." );
+        return fieldInfos;
     }
 
     @Override
@@ -216,7 +229,7 @@ public class IndexReaderStub extends LeafReader
     @Override
     public void document( int docID, StoredFieldVisitor visitor ) throws IOException
     {
-        visitor.stringField( DummyFieldInfo, String.valueOf( docID ).getBytes( StandardCharsets.UTF_8 ) );
+        visitor.stringField( fieldInfos.fieldInfo( "id" ), String.valueOf( docID ).getBytes( StandardCharsets.UTF_8 ) );
     }
 
     @Override
@@ -228,5 +241,13 @@ public class IndexReaderStub extends LeafReader
     {
         return Arrays.stream( elements )
                 .mapToInt( value ->  NumberUtils.toInt( value, 0 )).max().getAsInt();
+    }
+
+    private FieldInfos buildFieldInfos( Fields fields )
+    {
+        FieldInfo[] infos = StreamSupport.stream( fields.spliterator(), false )
+                .map( fieldNameToFieldInfoConverter() )
+                .toArray( FieldInfo[]::new );
+        return new FieldInfos(infos);
     }
 }
