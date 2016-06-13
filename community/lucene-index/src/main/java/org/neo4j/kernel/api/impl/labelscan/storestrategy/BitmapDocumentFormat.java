@@ -21,8 +21,8 @@ package org.neo4j.kernel.api.impl.labelscan.storestrategy;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.IndexableField;
@@ -53,7 +53,7 @@ public enum BitmapDocumentFormat
             assert (bitmap & 0xFFFFFFFF00000000L) == 0 :
                     "Tried to store a bitmap as int, but which had values outside int limits";
             document.add( new NumericDocValuesField( label, bitmap ) );
-            document.add( new IntField( label, (int) bitmap, Field.Store.YES ) );
+            document.add( new LegacyIntField( label, (int) bitmap, Field.Store.YES ) );
         }
     },
     _64( BitmapFormat._64 )
@@ -68,7 +68,7 @@ public enum BitmapDocumentFormat
         protected void addLabelFields( Document document, String label, long bitmap )
         {
             document.add( new NumericDocValuesField( label, bitmap ) );
-            document.add( new LongField( label, bitmap, Field.Store.YES ) );
+            document.add( new LegacyLongField( label, bitmap, Field.Store.YES ) );
         }
     };
 

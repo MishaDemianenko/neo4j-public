@@ -276,7 +276,7 @@ class LuceneBatchInserterIndex implements BatchInserterIndex
     {
         try
         {
-            return new SearcherManager( writer, true, new SearcherFactory() );
+            return new SearcherManager( writer, new SearcherFactory() );
         }
         catch ( IOException e )
         {

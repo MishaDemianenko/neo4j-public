@@ -19,9 +19,7 @@
  */
 package org.neo4j.kernel.api.impl.index;
 
-import org.apache.lucene.codecs.PostingsFormat;
 import org.apache.lucene.codecs.blocktreeords.BlockTreeOrdsPostingsFormat;
-import org.apache.lucene.codecs.lucene54.Lucene54Codec;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
 
@@ -65,15 +63,15 @@ public final class IndexWriterConfigs
         writerConfig.setMaxBufferedDocs( MAX_BUFFERED_DOCS );
         writerConfig.setIndexDeletionPolicy( new MultipleBackupDeletionPolicy() );
         writerConfig.setUseCompoundFile( true );
-        writerConfig.setCodec(new Lucene54Codec()
-        {
-            @Override
-            public PostingsFormat getPostingsFormatForField( String field )
-            {
-                PostingsFormat postingFormat = super.getPostingsFormatForField( field );
-                return CODEC_BLOCK_TREE_ORDS_POSTING_FORMAT ? blockTreeOrdsPostingsFormat : postingFormat;
-            }
-        });
+//        writerConfig.setCodec(new Lucene54Codec()
+//        {
+//            @Override
+//            public PostingsFormat getPostingsFormatForField( String field )
+//            {
+//                PostingsFormat postingFormat = super.getPostingsFormatForField( field );
+//                return CODEC_BLOCK_TREE_ORDS_POSTING_FORMAT ? blockTreeOrdsPostingsFormat : postingFormat;
+//            }
+//        });
 
         LogByteSizeMergePolicy mergePolicy = new LogByteSizeMergePolicy();
         mergePolicy.setNoCFSRatio( MERGE_POLICY_NO_CFS_RATIO );

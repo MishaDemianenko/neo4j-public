@@ -19,9 +19,6 @@
  */
 package org.neo4j.index.impl.lucene.legacy;
 
-import java.io.IOException;
-import java.util.Iterator;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -29,6 +26,9 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldCollector;
+
+import java.io.IOException;
+import java.util.Iterator;
 
 import org.neo4j.helpers.collection.ArrayIterator;
 import org.neo4j.index.lucene.QueryContext;
@@ -66,7 +66,7 @@ class TopDocsIterator extends AbstractIndexHits<Document>
             }
             else
             {
-                topDocs = searcher.search( query, null, context.getTop(), sorting );
+                topDocs = searcher.search( query, context.getTop(), sorting );
             }
         }
         return topDocs;

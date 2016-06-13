@@ -13,7 +13,7 @@
         <license-text.header>GPL-3-header.txt</license-text.header>
         <licensing.prepend.text>notice-gpl-prefix.txt</licensing.prepend.text>
         <lucene4.version>4.10.4</lucene4.version>
-        <lucene5.version>5.5.0</lucene5.version>
+        <lucene6.version>6.0.1</lucene6.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -49,12 +49,12 @@
                                 <artifactItem>
                                     <groupId>org.apache.lucene</groupId>
                                     <artifactId>lucene-core</artifactId>
-                                    <version>${lucene5.version}</version>
+                                    <version>${lucene6.version}</version>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.apache.lucene</groupId>
                                     <artifactId>lucene-backward-codecs</artifactId>
-                                    <version>${lucene5.version}</version>
+                                    <version>${lucene6.version}</version>
                                 </artifactItem>
                             </artifactItems>
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
@@ -90,12 +90,12 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>${lucene5.version}</version>
+            <version>${lucene6.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-backward-codecs</artifactId>
-            <version>${lucene5.version}</version>
+            <version>${lucene6.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

@@ -23,8 +23,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
@@ -138,7 +138,7 @@ public class LuceneDocumentStructureTest
     {
         // given
         ConstantScoreQuery constantScoreQuery = (ConstantScoreQuery) newSeekQuery( 12 );
-        NumericRangeQuery<Double> query = (NumericRangeQuery<Double>) constantScoreQuery.getQuery();
+        LegacyNumericRangeQuery<Double> query = (LegacyNumericRangeQuery<Double>) constantScoreQuery.getQuery();
 
         // then
         assertEquals( 12.0, query.getMin() );
@@ -161,7 +161,7 @@ public class LuceneDocumentStructureTest
     public void shouldBuildRangeSeekByNumberQueryForStrings() throws Exception
     {
         // given
-        NumericRangeQuery<Double> query = LuceneDocumentStructure.newInclusiveNumericRangeSeekQuery( 12.0d, null );
+        LegacyNumericRangeQuery<Double> query = LuceneDocumentStructure.newInclusiveNumericRangeSeekQuery( 12.0d, null );
 
         // then
         assertEquals( "number", query.getField() );

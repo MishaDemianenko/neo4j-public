@@ -22,7 +22,7 @@ package org.neo4j.index.impl.lucene.legacy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Query;
 
 import java.io.IOException;
@@ -92,22 +92,22 @@ public abstract class LuceneUtil
     {
         if ( from instanceof Long || to instanceof Long )
         {
-            return NumericRangeQuery.newLongRange( key, from != null ? from.longValue() : 0,
+            return LegacyNumericRangeQuery.newLongRange( key, from != null ? from.longValue() : 0,
                     to != null ? to.longValue() : Long.MAX_VALUE, includeFrom, includeTo );
         }
         else if ( from instanceof Double || to instanceof Double )
         {
-            return NumericRangeQuery.newDoubleRange( key, from != null ? from.doubleValue() : 0,
+            return LegacyNumericRangeQuery.newDoubleRange( key, from != null ? from.doubleValue() : 0,
                     to != null ? to.doubleValue() : Double.MAX_VALUE, includeFrom, includeTo );
         }
         else if ( from instanceof Float || to instanceof Float )
         {
-            return NumericRangeQuery.newFloatRange( key, from != null ? from.floatValue() : 0,
+            return LegacyNumericRangeQuery.newFloatRange( key, from != null ? from.floatValue() : 0,
                     to != null ? to.floatValue() : Float.MAX_VALUE, includeFrom, includeTo );
         }
         else
         {
-            return NumericRangeQuery.newIntRange( key, from != null ? from.intValue() : 0,
+            return LegacyNumericRangeQuery.newIntRange( key, from != null ? from.intValue() : 0,
                     to != null ? to.intValue() : Integer.MAX_VALUE, includeFrom, includeTo );
         }
     }

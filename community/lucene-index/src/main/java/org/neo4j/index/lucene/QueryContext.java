@@ -21,7 +21,7 @@ package org.neo4j.index.lucene;
 
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedNumericSortField;
@@ -106,7 +106,7 @@ public class QueryContext
 
     /**
      * Sort the results of a numeric range query if the query in this context
-     * is a {@link NumericRangeQuery}, see {@link #numericRange(String, Number, Number)},
+     * is a {@link LegacyNumericRangeQuery}, see {@link #numericRange(String, Number, Number)},
      * Otherwise an {@link IllegalStateException} will be thrown.
      *
      * @param key the key to sort on.
@@ -116,13 +116,13 @@ public class QueryContext
      */
     public QueryContext sortNumeric( String key, boolean reversed )
     {
-        if ( !( queryOrQueryObject instanceof NumericRangeQuery ) )
+        if ( !( queryOrQueryObject instanceof LegacyNumericRangeQuery ) )
         {
             throw new IllegalStateException( "Not a numeric range query" );
         }
 
-        Number number = ((NumericRangeQuery)queryOrQueryObject).getMin();
-        number = number != null ? number : ((NumericRangeQuery)queryOrQueryObject).getMax();
+        Number number = ((LegacyNumericRangeQuery<Number>)queryOrQueryObject).getMin();
+        number = number != null ? number : ((LegacyNumericRangeQuery)queryOrQueryObject).getMax();
         SortField.Type fieldType = SortField.Type.INT;
         if ( number instanceof Long )
         {

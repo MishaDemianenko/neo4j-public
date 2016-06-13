@@ -56,7 +56,7 @@ import org.neo4j.kernel.impl.api.scan.InMemoryLabelScanStoreExtension;
 import org.neo4j.test.TestGraphDatabaseFactory;
 import org.neo4j.test.rule.TargetDirectory;
 
-import static org.apache.lucene.search.NumericRangeQuery.newIntRange;
+import static org.apache.lucene.search.LegacyNumericRangeQuery.newIntRange;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

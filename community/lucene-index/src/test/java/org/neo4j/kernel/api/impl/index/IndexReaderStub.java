@@ -29,6 +29,7 @@ import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.NumericDocValues;
+import org.apache.lucene.index.PointValues;
 import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.index.SortedNumericDocValues;
 import org.apache.lucene.index.SortedSetDocValues;
@@ -53,7 +54,7 @@ public class IndexReaderStub extends LeafReader
     private IOException throwOnFields;
     private static FieldInfo DummyFieldInfo =
             new FieldInfo( "id", 0, false, true, false, IndexOptions.DOCS,
-                    DocValuesType.NONE, -1, Collections.<String,String>emptyMap() );
+                    DocValuesType.NONE, -1, Collections.<String,String>emptyMap(), 0, 0 );
 
     public IndexReaderStub( boolean allDeleted, final String... elements )
     {
@@ -181,6 +182,12 @@ public class IndexReaderStub extends LeafReader
                 return elements.length;
             }
         };
+    }
+
+    @Override
+    public PointValues getPointValues()
+    {
+        return null;
     }
 
     @Override

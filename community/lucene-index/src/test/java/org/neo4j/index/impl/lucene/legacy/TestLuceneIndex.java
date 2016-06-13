@@ -24,16 +24,15 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.hamcrest.CoreMatchers;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -60,7 +59,7 @@ import org.neo4j.kernel.impl.MyRelTypes;
 import org.neo4j.kernel.impl.index.IndexConfigStore;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
-import static org.apache.lucene.search.NumericRangeQuery.newIntRange;
+import static org.apache.lucene.search.LegacyNumericRangeQuery.newIntRange;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.core.Is.is;
@@ -729,19 +728,19 @@ public class TestLuceneIndex extends AbstractLuceneIndexTest
 
         for ( int i = 0; i < 2; i++ )
         {
-            assertThat( index.query( NumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
+            assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
                     .contains( node10, node6, node31 ) );
-            assertThat( index.query( NumericRangeQuery.newIntRange( key, 6, 15, true, true ) ), Contains
+            assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 6, 15, true, true ) ), Contains
                     .contains( node10, node6 ) );
-            assertThat( index.query( NumericRangeQuery.newIntRange( key, 6, 15, false, true ) ), Contains.contains( node10 ) );
+            assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 6, 15, false, true ) ), Contains.contains( node10 ) );
             restartTx();
         }
 
         index.remove( node6, key, numeric( 6 ) );
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
                 .contains( node10, node31 ) );
         restartTx();
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 4, 40, true, true ) ), Contains
                 .contains( node10, node31 ) );
     }
 
@@ -788,26 +787,26 @@ public class TestLuceneIndex extends AbstractLuceneIndexTest
         index.add( node2, key, new ValueContext( 5 ).indexNumeric() );
         index.remove( node1, key, new ValueContext( 15 ).indexNumeric() );
 
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
 
         index.remove( node2, key, new ValueContext( 5 ).indexNumeric() );
 
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), emptyIterable() );
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), emptyIterable() );
 
         restartTx();
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), emptyIterable() );
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), emptyIterable() );
 
         index.add( node1, key, new ValueContext( 15 ).indexNumeric() );
         index.add( node2, key, new ValueContext( 5 ).indexNumeric() );
         restartTx();
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains
                 .contains( node1, node2 ) );
         index.remove( node1, key, new ValueContext( 15 ).indexNumeric() );
 
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
 
         restartTx();
-        assertThat( index.query( NumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
+        assertThat( index.query( LegacyNumericRangeQuery.newIntRange( key, 0, 20, false, false ) ), Contains.contains( node2 ) );
     }
 
     @Test
@@ -981,15 +980,15 @@ public class TestLuceneIndex extends AbstractLuceneIndexTest
         creator.delete( b );
         restartTx();
 
-        Iterators.count( (Iterator<Node>) index.get( key, value ) );
+        Iterators.count( index.get( key, value ) );
         rollbackTx();
         beginTx();
 
-        Iterators.count( (Iterator<Node>) index.get( key, value ) );
+        Iterators.count( index.get( key, value ) );
         index.add( c, "something", "whatever" );
         restartTx();
 
-        Iterators.count( (Iterator<Node>) index.get( key, value ) );
+        Iterators.count( index.get( key, value ) );
     }
 
     @Test
@@ -1143,7 +1142,7 @@ public class TestLuceneIndex extends AbstractLuceneIndexTest
     public void testSimilarity()
     {
         Index<Node> index = nodeIndex( MapUtil.stringMap( IndexManager.PROVIDER, "lucene",
-                "type", "fulltext", "similarity",  DefaultSimilarity.class.getName() ) );
+                "type", "fulltext", "similarity",  ClassicSimilarity.class.getName() ) );
         Node node = graphDb.createNode();
         index.add( node, "key", "value" );
         restartTx();
@@ -1823,10 +1822,10 @@ public class TestLuceneIndex extends AbstractLuceneIndexTest
         index.add( node, "end", ValueContext.numeric( 20 ) );
         restartTx();
 
-        BooleanQuery q = new BooleanQuery();
-        q.add( LuceneUtil.rangeQuery( "start", 9, null, true, true ), Occur.MUST );
-        q.add( LuceneUtil.rangeQuery( "end", null, 30, true, true ), Occur.MUST );
-        assertContains( index.query( q ), node );
+        BooleanQuery query = new BooleanQuery.Builder()
+                        .add( LuceneUtil.rangeQuery( "start", 9, null, true, true ), Occur.MUST )
+                        .add( LuceneUtil.rangeQuery( "end", null, 30, true, true ), Occur.MUST ).build();
+        assertContains( index.query( query ), node );
     }
 
     @Test

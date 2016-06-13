@@ -21,8 +21,8 @@ package org.neo4j.kernel.api.impl.schema.reader;
 
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.TermQuery;
 import org.junit.Assert;
@@ -118,7 +118,7 @@ public class SimpleIndexReaderTest
 
         simpleIndexReader.rangeSeekByNumberInclusive( 7, 8 );
 
-        verify( indexSearcher ).search( any( NumericRangeQuery.class ), any( DocValuesCollector.class ) );
+        verify( indexSearcher ).search( any( LegacyNumericRangeQuery.class ), any( DocValuesCollector.class ) );
     }
 
     @Test

@@ -204,6 +204,12 @@ public interface DirectoryFactory extends FileSystemAbstraction.ThirdPartyFileSy
         }
 
         @Override
+        public IndexOutput createTempOutput( String s, String s1, IOContext ioContext ) throws IOException
+        {
+            return delegate.createTempOutput( s, s1, ioContext );
+        }
+
+        @Override
         public void sync( Collection<String> names ) throws IOException
         {
             delegate.sync( names );

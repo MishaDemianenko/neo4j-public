@@ -19,12 +19,12 @@
  */
 package org.neo4j.kernel.api.impl.schema;
 
-import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.LegacyDoubleField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
@@ -55,7 +55,7 @@ enum ValueEncoding
                 @Override
                 Field encodeField( Object value )
                 {
-                    return new DoubleField( key(), ((Number) value).doubleValue(), NO );
+                    return new LegacyDoubleField( key(), ((Number) value).doubleValue(), NO );
                 }
 
                 @Override
@@ -68,7 +68,8 @@ enum ValueEncoding
                 Query encodeQuery( Object value )
                 {
                     Double doubleValue = ((Number) value).doubleValue();
-                    return new ConstantScoreQuery( NumericRangeQuery.newDoubleRange( key(), doubleValue, doubleValue,
+                    return new ConstantScoreQuery( LegacyNumericRangeQuery.newDoubleRange( key(), doubleValue,
+                            doubleValue,
                             true, true ) );
                 }
             },

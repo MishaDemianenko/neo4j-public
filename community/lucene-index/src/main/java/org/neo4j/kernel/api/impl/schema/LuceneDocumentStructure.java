@@ -34,9 +34,9 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -44,13 +44,16 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.LegacyNumericUtils;
 import org.apache.lucene.util.NumericUtils;
 import org.apache.lucene.util.StringHelper;
 
 import java.io.IOException;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.neo4j.unsafe.impl.internal.dragons.FeatureToggles;
 
@@ -118,11 +121,11 @@ public class LuceneDocumentStructure
      * Range queries are always inclusive, in order to do exclusive range queries the result must be filtered after the
      * fact. The reason we can't do inclusive range queries is that longs are coerced to doubles in the index.
      */
-    public static NumericRangeQuery<Double> newInclusiveNumericRangeSeekQuery( Number lower, Number upper )
+    public static LegacyNumericRangeQuery<Double> newInclusiveNumericRangeSeekQuery( Number lower, Number upper )
     {
         Double min = lower != null ? lower.doubleValue() : null;
         Double max = upper != null ? upper.doubleValue() : null;
-        return NumericRangeQuery.newDoubleRange( ValueEncoding.Number.key(), min, max, true, true );
+        return LegacyNumericRangeQuery.newDoubleRange( ValueEncoding.Number.key(), min, max, true, true );
     }
 
     public static Query newRangeSeekByStringQuery( String lower, boolean includeLower,
@@ -189,14 +192,14 @@ public class LuceneDocumentStructure
     /**
      * Filters the given {@link Terms terms} to include only terms that were created using fields from
      * {@link ValueEncoding#encodeField(Object)}. Internal lucene terms like those created for indexing numeric values
-     * (see javadoc for {@link NumericRangeQuery} class) are skipped. In other words this method returns
+     * (see javadoc for {@link LegacyNumericRangeQuery} class) are skipped. In other words this method returns
      * {@link TermsEnum} over all terms for the given field that were created using {@link ValueEncoding}.
      *
      * @param terms the terms to be filtered
      * @param fieldKey the corresponding {@link ValueEncoding#key() field key}
      * @return terms enum over all inserted terms
      * @throws IOException if it is not possible to obtain {@link TermsEnum}
-     * @see NumericRangeQuery
+     * @see LegacyNumericRangeQuery
      * @see org.apache.lucene.analysis.NumericTokenStream
      * @see NumericUtils#PRECISION_STEP_DEFAULT
      * @see NumericUtils#filterPrefixCodedLongs(TermsEnum)
@@ -205,7 +208,7 @@ public class LuceneDocumentStructure
     {
         TermsEnum termsEnum = terms.iterator();
         return ValueEncoding.forKey( fieldKey ) == ValueEncoding.Number
-               ? NumericUtils.filterPrefixCodedLongs( termsEnum )
+               ? LegacyNumericUtils.filterPrefixCodedLongs( termsEnum )
                : termsEnum;
     }
 
@@ -312,6 +315,7 @@ public class LuceneDocumentStructure
 
         private void removeAllValueFields()
         {
+            Set<String> names = new HashSet<>();
             Iterator<IndexableField> it = document.getFields().iterator();
             while ( it.hasNext() )
             {
@@ -319,8 +323,12 @@ public class LuceneDocumentStructure
                 String fieldName = field.name();
                 if ( !fieldName.equals( idFieldName ) )
                 {
-                    it.remove();
+                    names.add( fieldName );
                 }
+            }
+            for ( String name : names )
+            {
+                document.removeField( name );
             }
         }
 

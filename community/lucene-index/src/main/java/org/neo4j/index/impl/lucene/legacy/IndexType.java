@@ -21,13 +21,13 @@ package org.neo4j.index.impl.lucene.legacy;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.FloatField;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LegacyDoubleField;
+import org.apache.lucene.document.LegacyFloatField;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
@@ -311,19 +311,19 @@ public abstract class IndexType
             Number number = (Number) value;
             if ( value instanceof Long )
             {
-                field = new LongField( key, number.longValue(), Store.YES );
+                field = new LegacyLongField( key, number.longValue(), Store.YES );
             }
             else if ( value instanceof Float )
             {
-                field = new FloatField( key, number.floatValue(), Store.YES );
+                field = new LegacyFloatField( key, number.floatValue(), Store.YES );
             }
             else if ( value instanceof Double )
             {
-                field = new DoubleField( key, number.doubleValue(), Store.YES );
+                field = new LegacyDoubleField( key, number.doubleValue(), Store.YES );
             }
             else
             {
-                field = new IntField( key, number.intValue(), Store.YES );
+                field = new LegacyIntField( key, number.intValue(), Store.YES );
             }
         }
         else

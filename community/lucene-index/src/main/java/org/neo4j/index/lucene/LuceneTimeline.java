@@ -19,21 +19,21 @@
  */
 package org.neo4j.index.lucene;
 
-import static java.lang.Long.MAX_VALUE;
-import static org.apache.lucene.search.NumericRangeQuery.newLongRange;
-import static org.neo4j.index.lucene.ValueContext.numeric;
-
-import java.util.Map;
-
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedNumericSortField;
+
+import java.util.Map;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.IndexManager;
+
+import static java.lang.Long.MAX_VALUE;
+import static org.apache.lucene.search.LegacyNumericRangeQuery.newLongRange;
+import static org.neo4j.index.lucene.ValueContext.numeric;
 
 public class LuceneTimeline<T extends PropertyContainer> implements TimelineIndex<T>
 {
