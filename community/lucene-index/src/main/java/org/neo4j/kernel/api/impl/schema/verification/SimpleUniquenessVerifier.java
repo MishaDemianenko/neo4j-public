@@ -26,6 +26,7 @@ import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.PointValues;
+import org.apache.lucene.index.PrefixCodedTerms;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
@@ -37,11 +38,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.neo4j.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.api.exceptions.index.IndexEntryConflictException;
 import org.neo4j.kernel.api.impl.index.partition.PartitionSearcher;
 import org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure;
 import org.neo4j.kernel.api.index.PreexistingIndexEntryConflictException;
 import org.neo4j.kernel.api.index.PropertyAccessor;
+import org.neo4j.kernel.api.properties.Property;
 
 /**
  * A {@link UniquenessVerifier} that is able to verify value uniqueness inside a single index partition using
@@ -82,7 +85,8 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
                     if ( isPointValuesField( fieldInfo ) )
                     {
                         PointValues pointValues = reader.getPointValues();
-                        pointValues.intersect( fieldInfo.name, new UniquenessIntersectVisitor( searcher,
+                        pointValues.intersect( fieldInfo.name, new UniquenessIntersectVisitor( searcher, accessor,
+                                propKeyId,
                                 fieldInfo.getPointDimensionCount(),
                                 fieldInfo.getPointNumBytes() ) );
                     }
@@ -157,17 +161,19 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
 
     private static class UniquenessIntersectVisitor implements PointValues.IntersectVisitor
     {
-        private int previousDocId;
         private byte[] buffer;
         private final IndexSearcher searcher;
-        private final int dimensionCount;
-        private int bytesPerDimension;
+        private PropertyAccessor accessor;
+        private int propKeyId;
+        private DuplicateCheckingCollector.EntrySet duplicateCandidates = new DuplicateCheckingCollector.EntrySet();
 
-        public UniquenessIntersectVisitor( IndexSearcher searcher, int dimensionCount, int bytesPerDimension )
+        public UniquenessIntersectVisitor( IndexSearcher searcher, PropertyAccessor accessor, int propKeyId,
+                int dimensionCount,
+                int bytesPerDimension )
         {
             this.searcher = searcher;
-            this.dimensionCount = dimensionCount;
-            this.bytesPerDimension = bytesPerDimension;
+            this.accessor = accessor;
+            this.propKeyId = propKeyId;
             buffer = new byte[dimensionCount * bytesPerDimension];
         }
 
@@ -179,15 +185,39 @@ public class SimpleUniquenessVerifier implements UniquenessVerifier
         @Override
         public void visit( int docID, byte[] packedValue ) throws IOException
         {
-            if ( Arrays.equals( buffer, packedValue ) )
+            try
             {
-                long nodeId = LuceneDocumentStructure.getNodeId( searcher.doc( docID ) );
-                long bufferedNodeId = LuceneDocumentStructure.getNodeId( searcher.doc( previousDocId ) );
-                throw new IOException(  new PreexistingIndexEntryConflictException( DoublePoint.decodeDimension( packedValue, 0),
-                    nodeId, bufferedNodeId ));
+                if ( Arrays.equals( buffer, packedValue ) )
+                {
+                    for ( int i = 0; i < duplicateCandidates.position; i++ )
+                    {
+                        long nodeId = LuceneDocumentStructure.getNodeId( searcher.doc( docID ) );
+                        long bufferedNodeId = LuceneDocumentStructure.getNodeId(
+                                searcher.doc( (int) duplicateCandidates.ids[i] ) );
+                        Property property = accessor.getProperty( nodeId, propKeyId );
+                        Property bufferedProperty = accessor.getProperty( bufferedNodeId, propKeyId );
+                        if ( property.valueEquals( bufferedProperty.value() ) )
+                        {
+                            throw new IOException( new PreexistingIndexEntryConflictException(
+                                    DoublePoint.decodeDimension( packedValue, 0 ),
+                                    nodeId, bufferedNodeId ) );
+                        }
+                    }
+
+                }
+                else
+                {
+                    // end of series
+                    duplicateCandidates = new DuplicateCheckingCollector.EntrySet();
+                }
+                // todo extend duplicates in case we out of space
+                duplicateCandidates.add( docID, null );
+                System.arraycopy( packedValue, 0, buffer, 0, packedValue.length );
             }
-            previousDocId = docID;
-            System.arraycopy( packedValue, 0, buffer, 0, packedValue.length);
+            catch ( KernelException e )
+            {
+                throw new IOException( e );
+            }
         }
 
         @Override

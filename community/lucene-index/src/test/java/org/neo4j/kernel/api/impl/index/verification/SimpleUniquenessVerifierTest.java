@@ -54,9 +54,11 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -188,7 +190,7 @@ public class SimpleUniquenessVerifierTest
         IndexSearcher indexSearcher = spy( searcherManager.acquire() );
         runUniquenessVerification( propertyAccessor, indexSearcher );
 
-        verify( indexSearcher ).search( any( Query.class ), any( Collector.class ) );
+        verify( indexSearcher, times( 2 ) ).doc( anyInt() );
     }
 
     @Test
@@ -210,7 +212,7 @@ public class SimpleUniquenessVerifierTest
             assertThat( t, instanceOf( PreexistingIndexEntryConflictException.class ) );
         }
 
-        verify( indexSearcher ).search( any( Query.class ), any( Collector.class ) );
+        verify( indexSearcher, times( 2 ) ).doc( anyInt() );
     }
 
     private void runUniquenessVerification( PropertyAccessor propertyAccessor, IndexSearcher indexSearcher )

@@ -19,6 +19,8 @@
  */
 package org.neo4j.kernel.api.impl.schema.verification;
 
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
@@ -38,6 +40,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.neo4j.helpers.collection.Iterables;
 import org.neo4j.io.IOUtils;
@@ -71,24 +75,35 @@ public class PartitionedUniquenessVerifier implements UniquenessVerifier
     @Override
     public void verify( PropertyAccessor accessor, int propKeyId ) throws IndexEntryConflictException, IOException
     {
-        for ( String field : allFields() )
+        for ( FieldInfo fieldInfo : allFields() )
         {
-            if ( LuceneDocumentStructure.NODE_ID_KEY.equals( field ) )
+            if ( LuceneDocumentStructure.NODE_ID_KEY.equals( fieldInfo.name ) )
             {
                 continue;
             }
-
-            TermsEnum terms = termsForField( field ).iterator();
-            BytesRef termsRef;
-            while ( (termsRef = terms.next()) != null )
+            if ( isPointValuesField( fieldInfo ) )
             {
-                if ( terms.docFreq() > 1 )
+
+            }
+            else
+            {
+                TermsEnum terms = termsForField( fieldInfo.name ).iterator();
+                BytesRef termsRef;
+                while ( (termsRef = terms.next()) != null )
                 {
-                    TermQuery query = new TermQuery( new Term( field, termsRef ) );
-                    searchForDuplicates( query, accessor, propKeyId );
+                    if ( terms.docFreq() > 1 )
+                    {
+                        TermQuery query = new TermQuery( new Term( fieldInfo.name, termsRef ) );
+                        searchForDuplicates( query, accessor, propKeyId );
+                    }
                 }
             }
         }
+    }
+
+    private boolean isPointValuesField( FieldInfo fieldInfo )
+    {
+        return (fieldInfo.getPointDimensionCount() > 0) && (fieldInfo.getPointNumBytes() > 0);
     }
 
     @Override
@@ -106,6 +121,14 @@ public class PartitionedUniquenessVerifier implements UniquenessVerifier
     public void close() throws IOException
     {
         IOUtils.closeAll( searchers );
+    }
+
+    private void pointValues(String fieldName) throws IOException
+    {
+        for ( LeafReader leafReader : allLeafReaders() )
+        {
+            //TODO:
+        }
     }
 
     private Terms termsForField( String fieldName ) throws IOException
@@ -158,14 +181,12 @@ public class PartitionedUniquenessVerifier implements UniquenessVerifier
         }
     }
 
-    private Set<String> allFields() throws IOException
+    private Set<FieldInfo> allFields()
     {
-        Set<String> allFields = new HashSet<>();
-        for ( LeafReader leafReader : allLeafReaders() )
-        {
-            Iterables.addAll( allFields, leafReader.fields() );
-        }
-        return allFields;
+        return Iterables.stream( allLeafReaders() )
+                .map( LeafReader::getFieldInfos )
+                .flatMap( fieldInfos -> StreamSupport.stream( fieldInfos.spliterator(), false ) )
+                .collect( Collectors.toSet() );
     }
 
     private List<LeafReader> allLeafReaders()

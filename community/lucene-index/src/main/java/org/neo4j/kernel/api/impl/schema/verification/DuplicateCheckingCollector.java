@@ -79,12 +79,12 @@ public class DuplicateCheckingCollector extends SimpleCollector
         {
             for ( int i = 0; i < EntrySet.INCREMENT; i++ )
             {
-                Object value = current.value[i];
+                Object value = current.values[i];
 
-                if ( current.nodeId[i] == StatementConstants.NO_SUCH_NODE )
+                if ( current.ids[i] == StatementConstants.NO_SUCH_NODE )
                 {
-                    current.value[i] = property.value();
-                    current.nodeId[i] = nodeId;
+                    current.values[i] = property.value();
+                    current.ids[i] = nodeId;
                     if ( i == EntrySet.INCREMENT - 1 )
                     {
                         current.next = new EntrySet();
@@ -93,7 +93,7 @@ public class DuplicateCheckingCollector extends SimpleCollector
                 }
                 else if ( property.valueEquals( value ) )
                 {
-                    throw new PreexistingIndexEntryConflictException( value, current.nodeId[i], nodeId );
+                    throw new PreexistingIndexEntryConflictException( value, current.ids[i], nodeId );
                 }
             }
             current = current.next;
@@ -124,17 +124,29 @@ public class DuplicateCheckingCollector extends SimpleCollector
      * <p>
      * NOTE: Must always call reset() before use!
      */
-    private static class EntrySet
+    public static class EntrySet
     {
         static final int INCREMENT = 10000;
 
-        Object[] value = new Object[INCREMENT];
-        long[] nodeId = new long[INCREMENT];
+        Object[] values = new Object[INCREMENT];
+        long[] ids = new long[INCREMENT];
+        int position = 0;
         EntrySet next;
 
         EntrySet()
         {
-            Arrays.fill( nodeId, StatementConstants.NO_SUCH_NODE );
+            Arrays.fill( ids, StatementConstants.NO_SUCH_NODE );
+        }
+
+        public void add(long id, Object value)
+        {
+            this.ids[position] = id;
+            values[position++] = value;
+        }
+
+        public int position()
+        {
+            return position;
         }
     }
 }

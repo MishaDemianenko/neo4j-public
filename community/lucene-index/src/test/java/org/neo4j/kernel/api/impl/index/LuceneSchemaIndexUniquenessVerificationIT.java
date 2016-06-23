@@ -60,6 +60,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+@Ignore
 @RunWith( Parameterized.class )
 public class LuceneSchemaIndexUniquenessVerificationIT
 {
@@ -171,9 +172,22 @@ public class LuceneSchemaIndexUniquenessVerificationIT
     @Test
     public void largeLongValuesWithDuplicates() throws IOException
     {
-        long max = randomLongInRange( Long.MAX_VALUE - 20, Long.MAX_VALUE );
-        long min = max - nodesToCreate;
-        List<PropertyValue> data = withDuplicate( randomLongs( min, max ) );
+//        long max = randomLongInRange( Long.MAX_VALUE - 20, Long.MAX_VALUE );
+//        long min = max - nodesToCreate;
+//        List<PropertyValue> data = withDuplicate( randomLongs( min, max ) );
+
+        List<PropertyValue> data = Arrays.asList( new PropertyValue( 9223372036854775782L ),
+                new PropertyValue( 9223372036854775777L ), new PropertyValue( 9223372036854775794L ),
+                new PropertyValue( 9223372036854775783L ),
+                new PropertyValue( 9223372036854775779L ),
+                new PropertyValue( 9223372036854775786L ), new PropertyValue( 9223372036854775774L ),
+                new PropertyValue( 9223372036854775790L ),
+                new PropertyValue( 9223372036854775777L ),
+                new PropertyValue( 9223372036854775788L ),
+                new PropertyValue( 9223372036854775798L ),
+                new PropertyValue( 9223372036854775791L ), new PropertyValue( 9223372036854775792L ),
+                new PropertyValue( 9223372036854775776L ), new PropertyValue( 9223372036854775787L ),
+                new PropertyValue( 9223372036854775778L ) );
 
         insert( data );
 
