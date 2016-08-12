@@ -43,6 +43,7 @@ import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.api.txstate.TxStateHolder;
+import org.neo4j.kernel.guard.Guard;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.locking.Locks;
@@ -146,6 +147,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private CloseListener closeListener;
     private AccessMode accessMode;
     private volatile StatementLocks statementLocks;
+    private long timeout;
     private boolean beforeHookInvoked;
     private volatile boolean closing, closed;
     private boolean failure, success;
@@ -167,19 +169,19 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final Lock terminationReleaseLock = new ReentrantLock();
 
     public KernelTransactionImplementation( StatementOperationParts operations,
-                                            SchemaWriteGuard schemaWriteGuard,
-                                            TransactionHooks hooks,
-                                            ConstraintIndexCreator constraintIndexCreator,
-                                            Procedures procedures,
-                                            TransactionHeaderInformationFactory headerInformationFactory,
-                                            TransactionCommitProcess commitProcess,
-                                            TransactionMonitor transactionMonitor,
-                                            Supplier<LegacyIndexTransactionState> legacyIndexTxStateSupplier,
-                                            Pool<KernelTransactionImplementation> pool,
-                                            Clock clock,
-                                            TransactionTracer tracer,
-                                            StorageEngine storageEngine,
-                                            boolean txTerminationAwareLocks )
+            SchemaWriteGuard schemaWriteGuard,
+            TransactionHooks hooks,
+            ConstraintIndexCreator constraintIndexCreator,
+            Procedures procedures,
+            TransactionHeaderInformationFactory headerInformationFactory,
+            TransactionCommitProcess commitProcess,
+            TransactionMonitor transactionMonitor,
+            Supplier<LegacyIndexTransactionState> legacyIndexTxStateSupplier,
+            Pool<KernelTransactionImplementation> pool,
+            Clock clock,
+            TransactionTracer tracer,
+            StorageEngine storageEngine,
+            boolean txTerminationAwareLocks, Guard guard )
     {
         this.operations = operations;
         this.schemaWriteGuard = schemaWriteGuard;
@@ -195,7 +197,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.clock = clock;
         this.tracer = tracer;
         this.storageStatement = storeLayer.newStatement();
-        this.currentStatement = new KernelStatement( this, this, operations, storageStatement, procedures );
+        this.currentStatement = new KernelStatement( this, this, operations, storageStatement, procedures, guard );
         this.txTerminationAwareLocks = txTerminationAwareLocks;
     }
 
@@ -203,10 +205,12 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
      * Reset this transaction to a vanilla state, turning it into a logically new transaction.
      */
     public KernelTransactionImplementation initialize(
-            long lastCommittedTx, long lastTimeStamp, StatementLocks statementLocks, Type type, AccessMode accessMode )
+            long lastCommittedTx, long lastTimeStamp, StatementLocks statementLocks, Type type, AccessMode accessMode,
+            long timeout )
     {
         this.type = type;
         this.statementLocks = statementLocks;
+        this.timeout = timeout;
         this.terminationReason = null;
         this.closing = closed = failure = success = beforeHookInvoked = false;
         this.writeState = TransactionWriteState.NONE;
@@ -216,7 +220,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.transactionEvent = tracer.beginTransaction();
         assert transactionEvent != null : "transactionEvent was null!";
         this.accessMode = accessMode;
-        this.currentStatement.initialize( statementLocks );
+        this.currentStatement.initialize( statementLocks, clock );
         return this;
     }
 
@@ -225,8 +229,13 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         return reuseCount;
     }
 
+    public long getTimeout()
+    {
+        return timeout;
+    }
+
     @Override
-    public long localStartTime()
+    public long startTime()
     {
         return startTimeMillis;
     }

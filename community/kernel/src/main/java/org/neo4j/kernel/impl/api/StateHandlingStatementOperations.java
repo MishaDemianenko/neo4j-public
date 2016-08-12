@@ -251,7 +251,7 @@ public class StateHandlingStatementOperations implements
         // TODO Filter this properly
         StorageStatement storeStatement = statement.getStoreStatement();
         IndexReader reader = storeStatement.getIndexReader( index );
-        return COMPARE_NUMBERS.isEmptyRange( lower, includeLower, upper, includeUpper ) ? Cursors.<NodeItem>empty() :
+        return COMPARE_NUMBERS.isEmptyRange( lower, includeLower, upper, includeUpper ) ? Cursors.empty() :
                storeStatement.acquireIteratorNodeCursor(
                        reader.rangeSeekByNumberInclusive( lower, upper ) );
     }
@@ -316,10 +316,10 @@ public class StateHandlingStatementOperations implements
     }
 
     @Override
-    public int nodeDetachDelete( KernelStatement state, long nodeId )
+    public int nodeDetachDelete( KernelStatement statement, long nodeId )
             throws EntityNotFoundException, AutoIndexingKernelException, InvalidTransactionTypeKernelException
     {
-        nodeDelete( state, nodeId );
+        nodeDelete( statement, nodeId );
         return 0;
     }
 

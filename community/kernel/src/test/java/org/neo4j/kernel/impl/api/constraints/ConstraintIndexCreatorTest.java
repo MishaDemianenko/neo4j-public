@@ -161,7 +161,7 @@ public class ConstraintIndexCreatorTest
         private final List<KernelStatement> statements = new ArrayList<>();
 
         @Override
-        public KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode )
+        public KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode, long timeout )
         {
             return new KernelTransaction()
             {
@@ -245,11 +245,18 @@ public class ConstraintIndexCreatorTest
                 }
 
                 @Override
-                public long localStartTime()
+                public long startTime()
                 {
                     return 0;
                 }
             };
+        }
+
+        @Override
+        public KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode )
+                throws TransactionFailureException
+        {
+            return newTransaction( type, accessMode, 0L );
         }
 
         @Override

@@ -56,28 +56,28 @@ public abstract class KernelIntegrationTest
 
     protected TokenWriteOperations tokenWriteOperationsInNewTransaction() throws KernelException
     {
-        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.WRITE );
+        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.WRITE, 0L );
         statement = transaction.acquireStatement();
         return statement.tokenWriteOperations();
     }
 
     protected DataWriteOperations dataWriteOperationsInNewTransaction() throws KernelException
     {
-        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.WRITE );
+        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.WRITE, 0L );
         statement = transaction.acquireStatement();
         return statement.dataWriteOperations();
     }
 
     protected SchemaWriteOperations schemaWriteOperationsInNewTransaction() throws KernelException
     {
-        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.FULL );
+        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.FULL, 0L );
         statement = transaction.acquireStatement();
         return statement.schemaWriteOperations();
     }
 
     protected ReadOperations readOperationsInNewTransaction() throws TransactionFailureException
     {
-        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ );
+        transaction = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ, 0L );
         statement = transaction.acquireStatement();
         return statement.readOperations();
     }

@@ -37,6 +37,7 @@ import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.configuration.Settings;
+import org.neo4j.kernel.guard.Guard;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.api.state.LegacyIndexTransactionStateImpl;
 import org.neo4j.kernel.impl.index.IndexConfigStore;
@@ -88,6 +89,7 @@ public class KernelTransactions extends LifecycleAdapter
     private final TransactionIdStore transactionIdStore;
     private final Supplier<LegacyIndexTransactionState> legacyIndexTxStateSupplier;
     private final Clock clock;
+    private Guard guard;
     private final ReentrantReadWriteLock newTransactionsLock = new ReentrantReadWriteLock();
 
     // End Tx Dependencies
@@ -106,22 +108,22 @@ public class KernelTransactions extends LifecycleAdapter
     private final Set<KernelTransactionImplementation> allTransactions = newSetFromMap( new ConcurrentHashMap<>() );
 
     public KernelTransactions( StatementLocksFactory statementLocksFactory,
-                               ConstraintIndexCreator constraintIndexCreator,
-                               StatementOperationParts statementOperations,
-                               SchemaWriteGuard schemaWriteGuard,
-                               TransactionHeaderInformationFactory txHeaderFactory,
-                               TransactionCommitProcess transactionCommitProcess,
-                               IndexConfigStore indexConfigStore,
-                               LegacyIndexProviderLookup legacyIndexProviderLookup,
-                               TransactionHooks hooks,
-                               TransactionMonitor transactionMonitor,
-                               LifeSupport dataSourceLife,
-                               Tracers tracers,
-                               StorageEngine storageEngine,
-                               Procedures procedures,
-                               TransactionIdStore transactionIdStore,
-                               Config config,
-                               Clock clock )
+            ConstraintIndexCreator constraintIndexCreator,
+            StatementOperationParts statementOperations,
+            SchemaWriteGuard schemaWriteGuard,
+            TransactionHeaderInformationFactory txHeaderFactory,
+            TransactionCommitProcess transactionCommitProcess,
+            IndexConfigStore indexConfigStore,
+            LegacyIndexProviderLookup legacyIndexProviderLookup,
+            TransactionHooks hooks,
+            TransactionMonitor transactionMonitor,
+            LifeSupport dataSourceLife,
+            Tracers tracers,
+            StorageEngine storageEngine,
+            Procedures procedures,
+            TransactionIdStore transactionIdStore,
+            Config config,
+            Clock clock, Guard guard )
     {
         this.statementLocksFactory = statementLocksFactory;
         this.txTerminationAwareLocks = config.get( tx_termination_aware_locks );
@@ -137,6 +139,7 @@ public class KernelTransactions extends LifecycleAdapter
         this.storageEngine = storageEngine;
         this.procedures = procedures;
         this.transactionIdStore = transactionIdStore;
+        this.guard = guard;
         this.legacyIndexTxStateSupplier = () -> new CachingLegacyIndexTransactionState(
                 new LegacyIndexTransactionStateImpl( indexConfigStore, legacyIndexProviderLookup ) );
         this.clock = clock;
@@ -154,14 +157,14 @@ public class KernelTransactions extends LifecycleAdapter
                     statementOperations, schemaWriteGuard, hooks, constraintIndexCreator, procedures,
                     transactionHeaderInformationFactory, transactionCommitProcess, transactionMonitor,
                     legacyIndexTxStateSupplier, localTxPool, clock, tracers.transactionTracer,
-                    storageEngine, txTerminationAwareLocks );
+                    storageEngine, txTerminationAwareLocks, guard );
 
             allTransactions.add( tx );
             return tx;
         }
     };
 
-    public KernelTransaction newInstance( KernelTransaction.Type type, AccessMode accessMode )
+    public KernelTransaction newInstance( KernelTransaction.Type type, AccessMode accessMode, long timeout )
     {
         assertCurrentThreadIsNotBlockingNewTransactions();
         newTransactionsLock.readLock().lock();
@@ -172,7 +175,7 @@ public class KernelTransactions extends LifecycleAdapter
             KernelTransactionImplementation tx = localTxPool.acquire();
             StatementLocks statementLocks = statementLocksFactory.newInstance();
             tx.initialize( lastCommittedTransaction.transactionId(),
-                    lastCommittedTransaction.commitTimestamp(), statementLocks, type, accessMode );
+                    lastCommittedTransaction.commitTimestamp(), statementLocks, type, accessMode, timeout );
             return tx;
         }
         finally

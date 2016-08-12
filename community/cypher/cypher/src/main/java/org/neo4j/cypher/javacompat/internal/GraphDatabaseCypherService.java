@@ -84,6 +84,12 @@ public class GraphDatabaseCypherService implements GraphDatabaseQueryService
         return graph.validateURLAccess( url );
     }
 
+    @Override
+    public InternalTransaction beginTransaction( KernelTransaction.Type type, AccessMode.Static accessMode, long timeout )
+    {
+        return graph.beginTransaction( type, accessMode, timeout );
+    }
+
     // This provides backwards compatibility to the older API for places that cannot (yet) stop using it.
     // TODO: Remove this when possible (remove RULE, remove older compilers)
     public GraphDatabaseFacade getGraphDatabaseService()

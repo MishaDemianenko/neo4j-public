@@ -41,7 +41,7 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
         this.txReuseCount = tx.getReuseCount();
         this.lastTransactionIdWhenStarted = tx.lastTransactionIdWhenStarted();
         this.lastTransactionTimestampWhenStarted = tx.lastTransactionTimestampWhenStarted();
-        this.localStartTime = tx.localStartTime();
+        this.localStartTime = tx.startTime();
         this.tx = tx;
     }
 

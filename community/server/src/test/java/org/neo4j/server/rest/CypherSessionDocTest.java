@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 
 import org.neo4j.helpers.collection.Pair;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
 import org.neo4j.logging.NullLogProvider;
 import org.neo4j.server.database.CypherExecutor;
@@ -43,7 +44,7 @@ public class CypherSessionDocTest
     {
         GraphDatabaseFacade graphdb = (GraphDatabaseFacade) new TestGraphDatabaseFactory().newImpermanentDatabase();
         Database database = new WrappedDatabase( graphdb );
-        CypherExecutor executor = new CypherExecutor( database );
+        CypherExecutor executor = new CypherExecutor( database, Config.defaults() );
         executor.start();
         try
         {

@@ -21,7 +21,6 @@ package org.neo4j.kernel.api;
 
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.security.AccessMode;
-import org.neo4j.kernel.impl.api.Kernel;
 
 /**
  * View of a {@link KernelTransaction} that provides a limited set of actions against the transaction.
@@ -44,7 +43,7 @@ public interface KernelTransactionHandle
 
     /**
      * The start time of the underlying transaction. I.e. basically {@link System#currentTimeMillis()} when user
-     * called {@link Kernel#newTransaction(KernelTransaction.Type, AccessMode)}.
+     * called {@link KernelAPI#newTransaction(KernelTransaction.Type, AccessMode, long)}.
      *
      * @return the transaction start time.
      */

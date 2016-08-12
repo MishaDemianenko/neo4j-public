@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import org.neo4j.collection.pool.Pool;
 import org.neo4j.helpers.Clock;
 import org.neo4j.kernel.api.security.AccessMode;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
 import org.neo4j.kernel.impl.api.SchemaWriteGuard;
 import org.neo4j.kernel.impl.api.StatementOperationParts;
@@ -86,11 +87,11 @@ public class KernelTransactionFactory
                 mock( Pool.class ),
                 Clock.SYSTEM_CLOCK,
                 TransactionTracer.NULL,
-                storageEngine, false );
+                storageEngine, false, mock( TimeoutGuard.class ) );
 
         StatementLocks statementLocks = new SimpleStatementLocks( new NoOpClient() );
 
-        transaction.initialize( 0, 0, statementLocks, KernelTransaction.Type.implicit, accessMode );
+        transaction.initialize( 0, 0, statementLocks, KernelTransaction.Type.implicit, accessMode, 0L );
 
         return new Instances( transaction, storageEngine, storeReadLayer, storageStatement );
     }

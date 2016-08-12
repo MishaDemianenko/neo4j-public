@@ -34,6 +34,8 @@ import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.kernel.api.ReadOperations;
 import org.neo4j.kernel.api.Statement;
 import org.neo4j.kernel.api.index.IndexDescriptor;
+import org.neo4j.kernel.guard.Guard;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.KernelStatement;
 import org.neo4j.kernel.impl.core.ThreadToStatementContextBridge;
 import org.neo4j.kernel.impl.proc.Procedures;
@@ -43,6 +45,7 @@ import org.neo4j.storageengine.api.StoreReadLayer;
 import org.neo4j.test.TestGraphDatabaseFactory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.mockito.Mockito.mock;
 import static org.neo4j.graphdb.Label.label;
 
 /**
@@ -68,8 +71,8 @@ public abstract class DiskLayerTest
         db = (GraphDatabaseAPI) createGraphDatabase();
         DependencyResolver resolver = db.getDependencyResolver();
         this.disk = resolver.resolveDependency( StorageEngine.class ).storeReadLayer();
-        this.state = new KernelStatement( null,
-                null, null, disk.newStatement(), new Procedures() );
+        Guard guard = resolver.resolveDependency( Guard.class );
+        this.state = new KernelStatement( null, null, null, disk.newStatement(), new Procedures(), guard );
     }
 
     protected GraphDatabaseService createGraphDatabase()

@@ -72,7 +72,7 @@ public class CommunityNeoServer extends AbstractNeoServer
     {
         return Arrays.asList(
                 new DBMSModule( webServer ),
-                new RESTApiModule( webServer, database, getConfig(), getDependencyResolver(), logProvider ),
+                new RESTApiModule( webServer, getConfig(), getDependencyResolver(), logProvider ),
                 new ManagementApiModule( webServer, getConfig() ),
                 new ThirdPartyJAXRSModule( webServer, getConfig(), logProvider, this ),
                 new ConsoleModule( webServer, getConfig() ),

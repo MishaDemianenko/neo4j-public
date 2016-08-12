@@ -39,6 +39,7 @@ import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.locking.NoOpClient;
 import org.neo4j.kernel.impl.locking.SimpleStatementLocks;
@@ -361,7 +362,7 @@ public class KernelTransactionTerminationTest
                     mock( ConstraintIndexCreator.class ), new Procedures(), TransactionHeaderInformationFactory.DEFAULT,
                     mock( TransactionCommitProcess.class ), monitor, () -> mock( LegacyIndexTransactionState.class ),
                     mock( Pool.class ), new FakeClock(), TransactionTracer.NULL,
-                    mock( StorageEngine.class, RETURNS_MOCKS ), true );
+                    mock( StorageEngine.class, RETURNS_MOCKS ), true, mock( TimeoutGuard.class ) );
 
             this.monitor = monitor;
         }
@@ -373,7 +374,7 @@ public class KernelTransactionTerminationTest
 
         TestKernelTransaction initialize()
         {
-            initialize( 42, 42, new SimpleStatementLocks( new NoOpClient() ), Type.implicit, AccessMode.Static.FULL );
+            initialize( 42, 42, new SimpleStatementLocks( new NoOpClient() ), Type.implicit, AccessMode.Static.FULL, 0L );
             monitor.reset();
             return this;
         }

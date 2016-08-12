@@ -551,7 +551,8 @@ public class KernelIT extends KernelIntegrationTest
         assumeThat(kernel, instanceOf( Kernel.class ));
 
         // Then
-        try ( KernelTransaction tx = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ ) )
+        try ( KernelTransaction tx = kernel.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ,
+                0L ) )
         {
             ((Kernel)kernel).stop();
             tx.acquireStatement().readOperations().nodeExists( 0L );

@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import javax.servlet.Filter;
 
 import com.sun.jersey.api.core.HttpContext;
 import org.apache.commons.configuration.Configuration;
@@ -46,7 +45,6 @@ import org.neo4j.helpers.HostnamePort;
 import org.neo4j.helpers.RunCarefully;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.kernel.configuration.Config;
-import org.neo4j.kernel.guard.Guard;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacadeFactory;
 import org.neo4j.kernel.impl.query.QueryExecutionEngine;
 import org.neo4j.kernel.impl.util.Dependencies;
@@ -63,7 +61,6 @@ import org.neo4j.server.database.Database;
 import org.neo4j.server.database.DatabaseProvider;
 import org.neo4j.server.database.GraphDatabaseServiceProvider;
 import org.neo4j.server.database.InjectableProvider;
-import org.neo4j.server.guard.GuardingRequestFilter;
 import org.neo4j.server.modules.RESTApiModule;
 import org.neo4j.server.modules.ServerModule;
 import org.neo4j.server.plugins.ConfigAdapter;
@@ -197,7 +194,7 @@ public abstract class AbstractNeoServer implements NeoServer
 
             transactionFacade = createTransactionalActions();
 
-            cypherExecutor = new CypherExecutor( database );
+            cypherExecutor = new CypherExecutor( database, config );
 
             configureWebServer();
 
@@ -312,7 +309,6 @@ public abstract class AbstractNeoServer implements NeoServer
         try
         {
             setUpHttpLogging();
-            setUpTimeoutFilter();
             webServer.start();
             log.info( "Remote interface available at %s", baseUri() );
         }
@@ -335,25 +331,6 @@ public abstract class AbstractNeoServer implements NeoServer
                 config.get( http_logging_rotation_size ),
                 config.get( http_logging_rotation_keep_number ) );
         webServer.setRequestLog( requestLog );
-    }
-
-    private void setUpTimeoutFilter()
-    {
-        if ( getConfig().get( ServerSettings.webserver_limit_execution_time ) == null )
-        {
-            return;
-        }
-        //noinspection deprecation
-        Guard guard = resolveDependency( Guard.class );
-        if ( guard == null )
-        {
-            throw new RuntimeException( format("Inconsistent configuration. In order to use %s, you must set %s.",
-                    ServerSettings.webserver_limit_execution_time.name(),
-                    GraphDatabaseSettings.execution_guard_enabled.name()) );
-        }
-
-        Filter filter = new GuardingRequestFilter( guard, getConfig().get( ServerSettings.webserver_limit_execution_time ) );
-        webServer.addFilter( filter, "/*" );
     }
 
     public HostnamePort getAddress()

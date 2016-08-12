@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.function.Function;
 
+import org.neo4j.helpers.Clock;
 import org.neo4j.kernel.api.constraints.NodePropertyConstraint;
 import org.neo4j.kernel.api.constraints.PropertyConstraint;
 import org.neo4j.kernel.api.constraints.UniquenessConstraint;
@@ -38,6 +39,7 @@ import org.neo4j.kernel.api.properties.Property;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.api.txstate.TxStateHolder;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.operations.EntityReadOperations;
 import org.neo4j.kernel.impl.api.operations.EntityWriteOperations;
 import org.neo4j.kernel.impl.api.operations.SchemaReadOperations;
@@ -73,7 +75,7 @@ public class LockingStatementOperationsTest
     private final KernelTransactionImplementation transaction = mock( KernelTransactionImplementation.class );
     private final TxState txState = new TxState();
     private final KernelStatement state = new KernelStatement( transaction, new SimpleTxStateHolder( txState ),
-            null, mock( StorageStatement.class ), new Procedures() );
+            null, mock( StorageStatement.class ), new Procedures(), mock( TimeoutGuard.class ) );
     private final SchemaStateOperations schemaStateOps;
 
     public LockingStatementOperationsTest()
@@ -87,7 +89,7 @@ public class LockingStatementOperationsTest
         lockingOps = new LockingStatementOperations(
                 entityReadOps, entityWriteOps, schemaReadOps, schemaWriteOps, schemaStateOps
         );
-        state.initialize( new SimpleStatementLocks( locks ) );
+        state.initialize( new SimpleStatementLocks( locks ), Clock.SYSTEM_CLOCK );
         state.acquire();
     }
 

@@ -98,8 +98,8 @@ public class ConstraintIndexCreator
     public void dropUniquenessConstraintIndex( IndexDescriptor descriptor )
             throws TransactionFailureException, DropIndexFailureException
     {
-        try ( KernelTransaction transaction =
-                      kernelSupplier.get().newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.FULL );
+        try ( KernelTransaction transaction = kernelSupplier.get()
+                                .newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.FULL );
               Statement statement = transaction.acquireStatement() )
         {
             // NOTE: This creates the index (obviously) but it DOES NOT grab a schema

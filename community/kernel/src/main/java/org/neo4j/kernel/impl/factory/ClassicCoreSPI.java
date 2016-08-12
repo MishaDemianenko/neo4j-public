@@ -28,6 +28,7 @@ import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.security.URLAccessValidationError;
 import org.neo4j.kernel.GraphDatabaseQueryService;
 import org.neo4j.kernel.api.security.AccessMode;
@@ -35,6 +36,7 @@ import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.Statement;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.legacyindex.AutoIndexing;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.coreapi.CoreAPIAvailabilityGuard;
 import org.neo4j.kernel.impl.query.QueryExecutionKernelException;
 import org.neo4j.kernel.impl.query.QuerySession;
@@ -53,10 +55,12 @@ class ClassicCoreSPI implements GraphDatabaseFacade.SPI
     private final DataSourceModule dataSource;
     private final Logger msgLog;
     private final CoreAPIAvailabilityGuard availability;
+    private final Config config;
 
     public ClassicCoreSPI(PlatformModule platform, DataSourceModule dataSource, Logger msgLog, CoreAPIAvailabilityGuard availability )
     {
         this.platform = platform;
+        this.config = platform.config;
         this.dataSource = dataSource;
         this.msgLog = msgLog;
         this.availability = availability;
@@ -167,10 +171,16 @@ class ClassicCoreSPI implements GraphDatabaseFacade.SPI
     @Override
     public KernelTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode )
     {
+        return beginTransaction( type, accessMode, config.get( GraphDatabaseSettings.transaction_timeout ) );
+    }
+
+    @Override
+    public KernelTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode, long timeout )
+    {
         try
         {
             availability.assertDatabaseAvailable();
-            KernelTransaction kernelTx = dataSource.kernelAPI.get().newTransaction( type, accessMode );
+            KernelTransaction kernelTx = dataSource.kernelAPI.get().newTransaction( type, accessMode, timeout);
             kernelTx.registerCloseListener( (s) -> dataSource.threadToTransactionBridge.unbindTransactionFromCurrentThread() );
             dataSource.threadToTransactionBridge.bindTransactionToCurrentThread( kernelTx );
             return kernelTx;

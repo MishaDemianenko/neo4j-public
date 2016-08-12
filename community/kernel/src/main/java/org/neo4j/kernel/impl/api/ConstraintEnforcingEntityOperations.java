@@ -196,10 +196,9 @@ public class ConstraintEnforcingEntityOperations implements EntityOperations, Sc
     }
 
     @Override
-    public int nodeDetachDelete( KernelStatement state, long nodeId ) throws EntityNotFoundException,
-            AutoIndexingKernelException, InvalidTransactionTypeKernelException, KernelException
+    public int nodeDetachDelete( KernelStatement statement, long nodeId ) throws KernelException
     {
-        return entityWriteOperations.nodeDetachDelete( state, nodeId );
+        return entityWriteOperations.nodeDetachDelete( statement, nodeId );
     }
 
     @Override

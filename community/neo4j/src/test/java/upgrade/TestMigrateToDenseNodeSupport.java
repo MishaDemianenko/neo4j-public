@@ -222,7 +222,8 @@ public class TestMigrateToDenseNodeSupport
     private void verifyDenseRepresentation( GraphDatabaseService db, Node node, boolean dense )
     {
         KernelAPI kernelAPI = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency( KernelAPI.class );
-        try ( KernelTransaction tx = kernelAPI.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ );
+        try ( KernelTransaction tx = kernelAPI.newTransaction( KernelTransaction.Type.implicit, AccessMode.Static.READ,
+                0L );
               Statement statement = tx.acquireStatement() )
         {
             Cursor<NodeItem> nodeCursor = statement.readOperations().nodeCursor( node.getId() );

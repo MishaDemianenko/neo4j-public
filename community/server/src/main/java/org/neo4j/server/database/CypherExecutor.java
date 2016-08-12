@@ -22,9 +22,11 @@ package org.neo4j.server.database;
 import javax.servlet.http.HttpServletRequest;
 
 import org.neo4j.cypher.internal.javacompat.ExecutionEngine;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.kernel.GraphDatabaseQueryService;
 import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.core.ThreadToStatementContextBridge;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.coreapi.PropertyContainerLocker;
@@ -37,16 +39,20 @@ import org.neo4j.server.rest.web.ServerQuerySession;
 
 public class CypherExecutor extends LifecycleAdapter
 {
+    private static final String MAX_EXECUTION_TIME_HEADER = "max-execution-time";
+
     private final Database database;
     private ExecutionEngine executionEngine;
     private GraphDatabaseQueryService service;
     private ThreadToStatementContextBridge txBridge;
 
     private static final PropertyContainerLocker locker = new PropertyContainerLocker();
+    private final Long defaultTransactionTimeout;
 
-    public CypherExecutor( Database database )
+    public CypherExecutor( Database database, Config config )
     {
         this.database = database;
+        defaultTransactionTimeout = config.get( GraphDatabaseSettings.transaction_timeout );
     }
 
     public ExecutionEngine getExecutionEngine()
@@ -73,8 +79,25 @@ public class CypherExecutor extends LifecycleAdapter
 
     public QuerySession createSession( HttpServletRequest request )
     {
-        InternalTransaction transaction = service.beginTransaction( KernelTransaction.Type.implicit, AccessMode.Static.FULL );
+        long timeLimit = getTimeLimit( request );
+        InternalTransaction transaction = service.beginTransaction( KernelTransaction.Type.implicit, AccessMode
+                .Static.FULL, timeLimit );
         TransactionalContext context = new Neo4jTransactionalContext( service, transaction, txBridge.get(), locker );
         return new ServerQuerySession( request, context );
+    }
+
+    private long getTimeLimit( HttpServletRequest request )
+    {
+        long timeLimit = defaultTransactionTimeout;
+        String headerValue = request.getHeader( MAX_EXECUTION_TIME_HEADER );
+        if ( headerValue != null )
+        {
+            long maxHeader = Long.parseLong( headerValue );
+            if ( timeLimit < 0 || (maxHeader > 0 && maxHeader < timeLimit ) )
+            {
+                return maxHeader;
+            }
+        }
+        return timeLimit;
     }
 }

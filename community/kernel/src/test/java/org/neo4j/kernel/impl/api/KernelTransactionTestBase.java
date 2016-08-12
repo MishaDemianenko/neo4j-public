@@ -29,6 +29,8 @@ import org.neo4j.kernel.api.KernelTransaction.Type;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
+import org.neo4j.kernel.guard.Guard;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.store.StoreStatement;
 import org.neo4j.kernel.impl.locking.Locks;
 import org.neo4j.kernel.impl.locking.NoOpClient;
@@ -66,6 +68,7 @@ public class KernelTransactionTestBase
     protected final FakeClock clock = new FakeClock();
     protected final KernelTransactions kernelTransactions = mock( KernelTransactions.class );
     protected final Pool<KernelTransactionImplementation> txPool = mock( Pool.class );
+    protected Guard guard = mock( TimeoutGuard.class );
 
     @Before
     public void before()
@@ -99,7 +102,7 @@ public class KernelTransactionTestBase
         KernelTransactionImplementation tx = newNotInitializedTransaction( txTerminationAwareLocks );
         StatementLocks statementLocks = new SimpleStatementLocks( locks );
         tx.initialize( lastTransactionIdWhenStarted, BASE_TX_COMMIT_TIMESTAMP, statementLocks, Type.implicit,
-                accessMode );
+                accessMode, 0L );
         return tx;
     }
 
@@ -107,7 +110,7 @@ public class KernelTransactionTestBase
     {
         return new KernelTransactionImplementation( null, schemaWriteGuard, hooks, null, null, headerInformationFactory,
                 commitProcess, transactionMonitor, legacyIndexStateSupplier, txPool, clock, TransactionTracer.NULL,
-                storageEngine, txTerminationAwareLocks );
+                storageEngine, txTerminationAwareLocks, guard );
     }
 
     public class CapturingCommitProcess implements TransactionCommitProcess

@@ -271,16 +271,15 @@ public class LockingStatementOperations implements
     }
 
     @Override
-    public int nodeDetachDelete( final KernelStatement state, final long nodeId )
-            throws EntityNotFoundException, AutoIndexingKernelException, InvalidTransactionTypeKernelException, KernelException
+    public int nodeDetachDelete( final KernelStatement statement, final long nodeId ) throws KernelException
     {
         final AtomicInteger count = new AtomicInteger();
         TwoPhaseNodeForRelationshipLocking locking = new TwoPhaseNodeForRelationshipLocking( entityReadDelegate,
                 relId -> {
-                    state.assertOpen();
+                    statement.assertOpen();
                     try
                     {
-                        entityWriteDelegate.relationshipDelete( state, relId );
+                        entityWriteDelegate.relationshipDelete( statement, relId );
                         count.incrementAndGet();
                     }
                     catch ( EntityNotFoundException e )
@@ -289,9 +288,9 @@ public class LockingStatementOperations implements
                     }
                 } );
 
-        locking.lockAllNodesAndConsumeRelationships( nodeId, state );
-        state.assertOpen();
-        entityWriteDelegate.nodeDetachDelete( state, nodeId );
+        locking.lockAllNodesAndConsumeRelationships( nodeId, statement );
+        statement.assertOpen();
+        entityWriteDelegate.nodeDetachDelete( statement, nodeId );
         return count.get();
     }
 

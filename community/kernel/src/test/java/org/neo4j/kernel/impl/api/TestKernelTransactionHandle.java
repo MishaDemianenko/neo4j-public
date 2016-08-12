@@ -52,7 +52,7 @@ public class TestKernelTransactionHandle implements KernelTransactionHandle
     @Override
     public long localStartTime()
     {
-        return tx.localStartTime();
+        return tx.startTime();
     }
 
     @Override

@@ -17,21 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.guard;
+package org.neo4j.graphdb;
 
-public class GuardOperationsCountException extends GuardException
+public class StatementOptions
 {
+    private long maxQueryTime;
 
-    private final long opsCount;
-
-    public GuardOperationsCountException( final long opsCount )
+    public long getMaxQueryTime()
     {
-        super( String.format( "max ops (ops=%d)", opsCount ) );
-        this.opsCount = opsCount;
+        return maxQueryTime;
     }
 
-    public long getOpsCount()
+    public void setMaxQueryTime( long maxQueryTime )
     {
-        return opsCount;
+        this.maxQueryTime = maxQueryTime;
     }
 }

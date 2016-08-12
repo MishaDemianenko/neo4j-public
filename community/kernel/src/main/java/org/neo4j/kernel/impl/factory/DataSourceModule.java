@@ -43,7 +43,9 @@ import org.neo4j.kernel.api.dbms.DbmsOperations;
 import org.neo4j.kernel.api.legacyindex.AutoIndexing;
 import org.neo4j.kernel.builtinprocs.BuiltInProcedures;
 import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.guard.EmptyGuard;
 import org.neo4j.kernel.guard.Guard;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.NonTransactionalTokenNameLookup;
 import org.neo4j.kernel.impl.api.SchemaWriteGuard;
 import org.neo4j.kernel.impl.api.dbms.NonTransactionalDbmsOperations;
@@ -148,9 +150,8 @@ public class DataSourceModule
 
         SchemaWriteGuard schemaWriteGuard = deps.satisfyDependency( editionModule.schemaWriteGuard );
 
-        Boolean isGuardEnabled = config.get( GraphDatabaseSettings.execution_guard_enabled );
-        Guard guard =
-                isGuardEnabled ? deps.satisfyDependency( new Guard( logging.getInternalLog( Guard.class ) ) ) : null;
+        Guard guard = buildGuard( config, logging );
+        deps.satisfyDependency( guard );
 
         kernelEventHandlers = new KernelEventHandlers( logging.getInternalLog( KernelEventHandlers.class ) );
 
@@ -249,6 +250,13 @@ public class DataSourceModule
 
         this.storeId = neoStoreDataSource::getStoreId;
         this.kernelAPI = neoStoreDataSource::getKernel;
+    }
+
+    private Guard buildGuard( Config config, LogService logging )
+    {
+        Boolean isGuardEnabled = config.get( GraphDatabaseSettings.execution_guard_enabled );
+        Log internalLog = logging.getInternalLog( TimeoutGuard.class );
+        return isGuardEnabled ? new TimeoutGuard( internalLog ) : new EmptyGuard();
     }
 
     protected RelationshipProxy.RelationshipActions createRelationshipActions(

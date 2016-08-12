@@ -148,6 +148,13 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI
         KernelTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode );
 
         /**
+         * Begin a new kernel transaction. If a transaction is already associated to the current context
+         * (meaning, non-null is returned from {@link #currentTransaction()}), this should fail.
+         *
+         * @throws org.neo4j.graphdb.TransactionFailureException if unable to begin, or a transaction already exists.
+         */
+        KernelTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode, long timeout );
+        /**
          * Retrieve the transaction associated with the current context. For the classic implementation of the Core API,
          * the context is the current thread.
          * Must not return null, and must return the underlying transaction even if it has been terminated.
@@ -329,6 +336,17 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI
     public Transaction beginTx()
     {
         return beginTransaction( KernelTransaction.Type.explicit, AccessMode.Static.FULL );
+    }
+
+    public InternalTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode, long timeout )
+    {
+        if ( spi.isInOpenTransaction() )
+        {
+            // FIXME: perhaps we should check that the new type and access mode are compatible with the current tx
+            return new PlaceboTransaction( spi::currentTransaction, spi::currentStatement );
+        }
+
+        return new TopLevelTransaction( spi.beginTransaction( type, accessMode, timeout ), spi::currentStatement );
     }
 
     public InternalTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode )

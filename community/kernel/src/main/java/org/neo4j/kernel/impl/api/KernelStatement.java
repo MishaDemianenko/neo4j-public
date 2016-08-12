@@ -22,6 +22,7 @@ package org.neo4j.kernel.impl.api;
 import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.graphdb.TransactionTerminatedException;
 import org.neo4j.graphdb.security.AuthorizationViolationException;
+import org.neo4j.helpers.Clock;
 import org.neo4j.kernel.api.DataWriteOperations;
 import org.neo4j.kernel.api.ReadOperations;
 import org.neo4j.kernel.api.SchemaWriteOperations;
@@ -32,6 +33,7 @@ import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.api.txstate.TxStateHolder;
+import org.neo4j.kernel.guard.Guard;
 import org.neo4j.kernel.impl.locking.StatementLocks;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.storageengine.api.StorageStatement;
@@ -44,14 +46,14 @@ import org.neo4j.storageengine.api.StorageStatement;
  * <ol>
  * <li>Construct {@link KernelStatement} when {@link KernelTransactionImplementation} is constructed</li>
  * <li>For every transaction...</li>
- * <li>Call {@link #initialize(StatementLocks)} which makes this instance
+ * <li>Call {@link #initialize(StatementLocks, Clock)} which makes this instance
  * full available and ready to use. Call when the {@link KernelTransactionImplementation} is initialized.</li>
  * <li>Alternate {@link #acquire()} / {@link #close()} when acquiring / closing a statement for the transaction...
  * Temporarily asymmetric number of calls to {@link #acquire()} / {@link #close()} is supported, although in
  * the end an equal number of calls must have been issued.</li>
  * <li>To be safe call {@link #forceClose()} at the end of a transaction to force a close of the statement,
  * even if there are more than one current call to {@link #acquire()}. This instance is now again ready
- * to be {@link #initialize(StatementLocks)  initialized} and used for the transaction
+ * to be {@link #initialize(StatementLocks, Clock)  initialized} and used for the transaction
  * instance again, when it's initialized.</li>
  * </ol>
  */
@@ -62,16 +64,35 @@ public class KernelStatement implements TxStateHolder, Statement
     private final KernelTransactionImplementation transaction;
     private final OperationsFacade facade;
     private StatementLocks statementLocks;
+    private Guard guard;
     private int referenceCount;
+    private long startTime;
+    private Clock clock;
 
     public KernelStatement( KernelTransactionImplementation transaction,
             TxStateHolder txStateHolder,
-            StatementOperationParts operations, StorageStatement storeStatement, Procedures procedures )
+            StatementOperationParts operations, StorageStatement storeStatement, Procedures procedures, Guard guard )
     {
         this.transaction = transaction;
         this.txStateHolder = txStateHolder;
         this.storeStatement = storeStatement;
+        this.guard = guard;
         this.facade = new OperationsFacade( transaction, this, operations, procedures );
+    }
+
+    public void assertActive()
+    {
+        guard.check( this );
+    }
+
+    public long getTransactionTimeout()
+    {
+        return transaction.getTimeout();
+    }
+
+    public long getTransactionStartTime()
+    {
+        return transaction.startTime();
     }
 
     @Override
@@ -160,9 +181,10 @@ public class KernelStatement implements TxStateHolder, Statement
         }
     }
 
-    void initialize( StatementLocks statementLocks )
+    void initialize( StatementLocks statementLocks, Clock clock )
     {
         this.statementLocks = statementLocks;
+        this.clock = clock;
     }
 
     public StatementLocks locks()
@@ -175,7 +197,13 @@ public class KernelStatement implements TxStateHolder, Statement
         if ( referenceCount++ == 0 )
         {
             storeStatement.acquire();
+            startTime = clock.currentTimeMillis();
         }
+    }
+
+    public long getStartTime()
+    {
+        return startTime;
     }
 
     final void forceClose()

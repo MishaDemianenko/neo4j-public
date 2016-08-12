@@ -29,7 +29,7 @@ import org.neo4j.kernel.api.security.AccessMode;
  * and write operations are supported as well as creating transactions.
  *
  * Changes to the graph (i.e. write operations) are performed via a
- * {@link #newTransaction(KernelTransaction.Type, AccessMode) transaction context} where changes done
+ * {@link #newTransaction(KernelTransaction.Type, AccessMode, long) transaction context} where changes done
  * inside the transaction are visible in read operations for {@link Statement statements}
  * executed within that transaction context.
  */
@@ -38,12 +38,14 @@ public interface KernelAPI
     /**
      * Creates and returns a new {@link KernelTransaction} capable of modifying the
      * underlying graph.
-     *
-     * @param type the type of the new transaction: implicit (internally created) or explicit (created by the user)
+     *  @param type the type of the new transaction: implicit (internally created) or explicit (created by the user)
      * @param accessMode
+     * @param timeout
+     * @param timeout
      */
-    KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode ) throws TransactionFailureException;
+    KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode, long timeout ) throws TransactionFailureException;
 
+    KernelTransaction newTransaction( KernelTransaction.Type type, AccessMode accessMode ) throws TransactionFailureException;
     /**
      * Registers a {@link TransactionHook} that will receive notifications about committing transactions
      * and the changes they commit.

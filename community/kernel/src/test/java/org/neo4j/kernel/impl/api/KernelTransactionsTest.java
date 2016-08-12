@@ -40,6 +40,8 @@ import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.security.AccessMode;
 import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.guard.Guard;
+import org.neo4j.kernel.guard.TimeoutGuard;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.index.IndexConfigStore;
 import org.neo4j.kernel.impl.locking.Locks;
@@ -97,9 +99,9 @@ public class KernelTransactionsTest
         KernelTransactions registry = newTestKernelTransactions();
 
         // When
-        KernelTransaction first = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction second = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction third = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction first = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction second = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction third = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
 
         first.close();
 
@@ -115,9 +117,9 @@ public class KernelTransactionsTest
 
         registry.disposeAll();
 
-        KernelTransaction first = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction second = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction leftOpen = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction first = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction second = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction leftOpen = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
         first.close();
         second.close();
 
@@ -125,7 +127,7 @@ public class KernelTransactionsTest
         registry.disposeAll();
 
         // Then
-        KernelTransaction postDispose = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction postDispose = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
         assertThat( postDispose, not( equalTo( first ) ) );
         assertThat( postDispose, not( equalTo( second ) ) );
 
@@ -141,7 +143,7 @@ public class KernelTransactionsTest
         KernelTransactions registry = newKernelTransactions( newRememberingCommitProcess( transactionRepresentation ) );
 
         // When
-        try ( KernelTransaction transaction = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE ) )
+        try ( KernelTransaction transaction = registry.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L ) )
         {
             // Just pick anything that can flag that changes have been made to this transaction
             ((KernelTransactionImplementation) transaction).txState().nodeDoCreate( 0 );
@@ -159,11 +161,11 @@ public class KernelTransactionsTest
     {
         // GIVEN
         KernelTransactions transactions = newKernelTransactions();
-        KernelTransaction a = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction a = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
 
         // WHEN
         a.close();
-        KernelTransaction b = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction b = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
 
         // THEN
         assertSame( a, b );
@@ -174,9 +176,9 @@ public class KernelTransactionsTest
     {
         // GIVEN
         KernelTransactions transactions = newKernelTransactions();
-        KernelTransaction a = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction b = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction c = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction a = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction b = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction c = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
         KernelTransactionsSnapshot snapshot = transactions.get();
         assertFalse( snapshot.allClosed() );
 
@@ -186,7 +188,7 @@ public class KernelTransactionsTest
 
         // WHEN c gets closed and (test knowing too much) that instance getting reused in another transaction "d".
         c.close();
-        KernelTransaction d = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction d = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
         assertFalse( snapshot.allClosed() );
 
         // WHEN b finally gets closed
@@ -212,7 +214,7 @@ public class KernelTransactionsTest
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 while ( !end.get() )
                 {
-                    try ( KernelTransaction transaction = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE ) )
+                    try ( KernelTransaction transaction = transactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L ) )
                     {
                         parkNanos( MILLISECONDS.toNanos( random.nextInt( 3 ) ) );
                         if ( snapshots.get( threadIndex ) == null )
@@ -259,9 +261,9 @@ public class KernelTransactionsTest
     {
         KernelTransactions kernelTransactions = newTestKernelTransactions();
 
-        KernelTransaction tx1 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction tx2 = kernelTransactions.newInstance( KernelTransaction.Type.implicit,AccessMode.Static.NONE );
-        KernelTransaction tx3 = kernelTransactions.newInstance( KernelTransaction.Type.implicit,AccessMode.Static.NONE );
+        KernelTransaction tx1 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction tx2 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction tx3 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
 
         tx1.close();
         tx3.close();
@@ -274,9 +276,9 @@ public class KernelTransactionsTest
     {
         KernelTransactions kernelTransactions = newKernelTransactions();
 
-        KernelTransaction tx1 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction tx2 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
-        KernelTransaction tx3 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE );
+        KernelTransaction tx1 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction tx2 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
+        KernelTransaction tx3 = kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.NONE, 0L );
 
         kernelTransactions.disposeAll();
 
@@ -314,7 +316,7 @@ public class KernelTransactionsTest
         kernelTransactions.blockNewTransactions();
         try
         {
-            kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.WRITE );
+            kernelTransactions.newInstance( KernelTransaction.Type.implicit, AccessMode.Static.WRITE, 0L );
             fail( "Exception expected" );
         }
         catch ( Exception e )
@@ -372,7 +374,7 @@ public class KernelTransactionsTest
     {
         try
         {
-            kernelTransactions.newInstance( KernelTransaction.Type.explicit, AccessMode.Static.FULL ).close();
+            kernelTransactions.newInstance( KernelTransaction.Type.explicit, AccessMode.Static.FULL, 0L ).close();
         }
         catch ( TransactionFailureException e )
         {
@@ -445,12 +447,13 @@ public class KernelTransactionsTest
                     TransactionHeaderInformationFactory.DEFAULT,
                     commitProcess, null, null, new TransactionHooks(), mock( TransactionMonitor.class ), life,
                     tracers, storageEngine, new Procedures(), transactionIdStore, Config.empty(),
-                    Clock.SYSTEM_CLOCK );
+                    Clock.SYSTEM_CLOCK, mock( TimeoutGuard.class ) );
         }
         return new KernelTransactions( statementLocksFactory, null, null, null,
                 TransactionHeaderInformationFactory.DEFAULT,
                 commitProcess, null, null, new TransactionHooks(), mock( TransactionMonitor.class ), life,
-                tracers, storageEngine, new Procedures(), transactionIdStore, Config.empty(), Clock.SYSTEM_CLOCK );
+                tracers, storageEngine, new Procedures(), transactionIdStore, Config.empty(), Clock.SYSTEM_CLOCK,
+                mock( TimeoutGuard.class ) );
     }
 
     private static TransactionCommitProcess newRememberingCommitProcess( final TransactionRepresentation[] slot )
@@ -478,7 +481,7 @@ public class KernelTransactionsTest
             public KernelTransaction call()
             {
                 aboutToStartTx.countDown();
-                return kernelTransactions.newInstance( KernelTransaction.Type.explicit, AccessMode.Static.WRITE );
+                return kernelTransactions.newInstance( KernelTransaction.Type.explicit, AccessMode.Static.WRITE, 0L );
             }
         } );
     }
@@ -529,12 +532,12 @@ public class KernelTransactionsTest
                 LegacyIndexProviderLookup legacyIndexProviderLookup, TransactionHooks hooks,
                 TransactionMonitor transactionMonitor, LifeSupport dataSourceLife,
                 Tracers tracers, StorageEngine storageEngine, Procedures procedures,
-                TransactionIdStore transactionIdStore, Config config, Clock clock )
+                TransactionIdStore transactionIdStore, Config config, Clock clock, Guard guard )
         {
             super( statementLocksFactory, constraintIndexCreator, statementOperations, schemaWriteGuard,
                     txHeaderFactory, transactionCommitProcess, indexConfigStore, legacyIndexProviderLookup, hooks,
                     transactionMonitor, dataSourceLife, tracers, storageEngine, procedures, transactionIdStore,
-                    config, clock );
+                    config, clock, guard );
         }
 
         @Override

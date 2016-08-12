@@ -126,11 +126,6 @@ public interface ServerSettings
             "" + Math.min( Runtime.getRuntime().availableProcessors(), 500 ),
             range( 1, JettyThreadCalculator.MAX_THREADS ) );
 
-    @Description("If execution time limiting is enabled in the database, this configures the maximum request execution time.")
-    @Internal
-    Setting<Long> webserver_limit_execution_time =
-            setting( "unsupported.dbms.executiontime_limit.time", DURATION, NO_DEFAULT );
-
     @Internal
     Setting<List<String>> console_module_engines = setting(
             "unsupported.dbms.console_module.engines", STRING_LIST, "SHELL" );

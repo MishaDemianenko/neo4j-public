@@ -19,10 +19,9 @@
  */
 package org.neo4j.kernel.guard;
 
-public class GuardException extends RuntimeException
+class GuardException extends RuntimeException
 {
-
-    protected GuardException( final String message )
+    GuardException( final String message )
     {
         super( message );
     }

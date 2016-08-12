@@ -43,4 +43,6 @@ public interface GraphDatabaseQueryService
     Relationship getRelationshipById(long id);
     InternalTransaction beginTransaction( KernelTransaction.Type type, AccessMode accessMode );
     URL validateURLAccess( URL url ) throws URLAccessValidationError;
+
+    InternalTransaction beginTransaction( KernelTransaction.Type implicit, AccessMode.Static full, long timeout );
 }

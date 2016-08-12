@@ -796,9 +796,9 @@ public class NeoStoreDataSource implements Lifecycle, IndexProviders
         KernelTransactions kernelTransactions = life.add( new KernelTransactions( statementLocksFactory,
                 constraintIndexCreator, statementOperations, schemaWriteGuard, transactionHeaderInformationFactory,
                 transactionCommitProcess, indexConfigStore, legacyIndexProviderLookup, hooks, transactionMonitor,
-                life, tracers, storageEngine, procedures, transactionIdStore, config, Clock.SYSTEM_CLOCK ) );
+                life, tracers, storageEngine, procedures, transactionIdStore, config, Clock.SYSTEM_CLOCK, guard ) );
 
-        final Kernel kernel = new Kernel( kernelTransactions, hooks, databaseHealth, transactionMonitor, procedures );
+        final Kernel kernel = new Kernel( kernelTransactions, hooks, databaseHealth, transactionMonitor, procedures, config);
 
         kernel.registerTransactionHook( transactionEventHandlers );
 
