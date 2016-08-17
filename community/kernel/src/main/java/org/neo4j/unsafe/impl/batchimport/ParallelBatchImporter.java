@@ -190,7 +190,7 @@ public class ParallelBatchImporter implements BatchImporter
                     idMapper, cachedRelationships, inputCache,
                     calculateDenseNodesStage.getRelationshipTypes( Long.MAX_VALUE ),
                     // Is batch size a good measure for considering a group of relationships a minority?
-                    calculateDenseNodesStage.getRelationshipTypes( config.batchSize() ) );
+                    calculateDenseNodesStage.getRelationshipTypes( 0 ) );
 
             // Release this potentially really big piece of cached data
             long memoryWeCanHoldForCertain = totalMemoryUsageOf( idMapper, nodeRelationshipCache );
