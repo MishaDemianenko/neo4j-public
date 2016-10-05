@@ -26,6 +26,7 @@ import org.junit.rules.RuleChain;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,13 +46,21 @@ import org.neo4j.helpers.progress.ProgressMonitorFactory;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.configuration.Settings;
+import org.neo4j.kernel.impl.storageengine.impl.recordstorage.RecordStorageEngine;
+import org.neo4j.kernel.impl.store.NeoStores;
+import org.neo4j.kernel.impl.store.RelationshipStore;
 import org.neo4j.kernel.impl.store.record.NodeRecord;
+import org.neo4j.kernel.impl.store.record.RecordLoad;
+import org.neo4j.kernel.impl.store.record.RelationshipRecord;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.NullLogProvider;
 import org.neo4j.test.TestGraphDatabaseFactory;
 import org.neo4j.test.rule.TestDirectory;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.neo4j.consistency.ConsistencyCheckService.defaultLogFileName;
 import static org.neo4j.helpers.collection.MapUtil.stringMap;
@@ -79,6 +88,45 @@ public class ConsistencyCheckServiceIntegrationTest
 
     @Rule
     public final RuleChain chain = RuleChain.outerRule( testDirectory ).around( fixture );
+
+    @Test
+    public void reportNotUsedRelationshipReferencedInChain() throws Exception
+    {
+        prepareDbWithDeletedRelationshipPartOfTheChain();
+
+        Date timestamp = new Date();
+        ConsistencyCheckService service = new ConsistencyCheckService( timestamp );
+        Config configuration = new Config( settings(), GraphDatabaseSettings.class, ConsistencyCheckSettings.class );
+
+        ConsistencyCheckService.Result result = runFullConsistencyCheck( service, configuration );
+
+        assertEquals( Result.FAILURE, result );
+
+        File reportFile = new File( fixture.directory() + "/logs", defaultLogFileName( timestamp ) );
+        assertTrue( "Consistency check report file should be generated.", reportFile.exists() );
+        assertThat( "Expected to see report about not deleted relationship record present as part of a chain",
+                Files.readAllLines( reportFile.toPath() ).toString(),
+                containsString( "The relationship record is not in use, but referenced from relationships chain.") );
+    }
+
+    @Test
+    public void reportDuplicatedRelationshipRecords() throws Exception
+    {
+        prepareDbWithRelationshipCycle();
+        Date timestamp = new Date();
+        ConsistencyCheckService service = new ConsistencyCheckService( timestamp );
+        Config configuration = new Config( settings(), GraphDatabaseSettings.class, ConsistencyCheckSettings.class );
+
+        ConsistencyCheckService.Result result = runFullConsistencyCheck( service, configuration );
+
+        assertEquals( Result.FAILURE, result );
+
+        File reportFile = new File( fixture.directory() + "/logs", defaultLogFileName( timestamp ) );
+        assertTrue( "Consistency check report file should be generated.", reportFile.exists() );
+        assertThat( "Expected to see report about relationship record being part of the chain multiple times.",
+                Files.readAllLines( reportFile.toPath() ).toString(),
+                containsString( "The relationship record was already part of relationship chain.") );
+    }
 
     @Test
     public void shouldSucceedIfStoreIsConsistent() throws Exception
@@ -183,6 +231,77 @@ public class ConsistencyCheckServiceIntegrationTest
         builder.setConfig( settings(  ) );
 
         return builder.newGraphDatabase();
+    }
+
+    private void prepareDbWithRelationshipCycle()
+    {
+        GraphDatabaseAPI db = (GraphDatabaseAPI) new TestGraphDatabaseFactory()
+                .newEmbeddedDatabaseBuilder( testDirectory.graphDbDir() )
+                .setConfig( GraphDatabaseSettings.record_format, getRecordFormatName() )
+                .newGraphDatabase();
+        try
+        {
+            RelationshipType relationshipType = RelationshipType.withName( "testRelationshipType" );
+            try ( Transaction tx = db.beginTx() )
+            {
+                Node node1 = set( db.createNode() );
+                Node node2 = set( db.createNode(), property( "key", "value" ) );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                tx.success();
+            }
+
+            RecordStorageEngine recordStorageEngine = db.getDependencyResolver().resolveDependency( RecordStorageEngine.class );
+
+            NeoStores neoStores = recordStorageEngine.testAccessNeoStores();
+            RelationshipStore relationshipStore = neoStores.getRelationshipStore();
+            RelationshipRecord relationshipRecord = new RelationshipRecord( -1 );
+            RelationshipRecord record = relationshipStore.getRecord( 1, relationshipRecord, RecordLoad.FORCE );
+            record.setFirstNextRel( 3 );
+            relationshipStore.updateRecord( relationshipRecord );
+        }
+        finally
+        {
+            db.shutdown();
+        }
+    }
+
+    private void prepareDbWithDeletedRelationshipPartOfTheChain()
+    {
+        GraphDatabaseAPI db = (GraphDatabaseAPI) new TestGraphDatabaseFactory().newEmbeddedDatabaseBuilder( testDirectory.graphDbDir() )
+                .setConfig( GraphDatabaseSettings.record_format, getRecordFormatName() )
+                .newGraphDatabase();
+        try
+        {
+
+            RelationshipType relationshipType = RelationshipType.withName( "testRelationshipType" );
+            try ( Transaction tx = db.beginTx() )
+            {
+                Node node1 = set( db.createNode() );
+                Node node2 = set( db.createNode(), property( "key", "value" ) );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                node1.createRelationshipTo( node2, relationshipType );
+                tx.success();
+            }
+
+            RecordStorageEngine recordStorageEngine = db.getDependencyResolver().resolveDependency( RecordStorageEngine.class );
+
+            NeoStores neoStores = recordStorageEngine.testAccessNeoStores();
+            RelationshipStore relationshipStore = neoStores.getRelationshipStore();
+            RelationshipRecord relationshipRecord = new RelationshipRecord( -1 );
+            RelationshipRecord record = relationshipStore.getRecord( 4, relationshipRecord, RecordLoad.FORCE );
+            record.setInUse( false );
+            relationshipStore.updateRecord( relationshipRecord );
+        }
+        finally
+        {
+            db.shutdown();
+        }
     }
 
     protected Map<String,String> settings( String... strings )

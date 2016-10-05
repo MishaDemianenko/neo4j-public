@@ -497,6 +497,27 @@ public class RecordAccessStub implements RecordAccess
     }
 
     @Override
+    public Iterator<RelationshipRecord> rawRelationshipChain( long id )
+    {
+        return new PrefetchingIterator<RelationshipRecord>()
+        {
+            private long next = id;
+
+            @Override
+            protected RelationshipRecord fetchNextOrNull()
+            {
+                if ( Record.NO_NEXT_PROPERTY.is( next ) )
+                {
+                    return null;
+                }
+                RelationshipRecord record = reference( relationships, next, Version.LATEST ).record();
+                next = record.getFirstNextRel();
+                return record;
+            }
+        };
+    }
+
+    @Override
     public RecordReference<RelationshipTypeTokenRecord> relationshipType( int id )
     {
         return reference( relationshipTypeTokens, id, Version.LATEST );

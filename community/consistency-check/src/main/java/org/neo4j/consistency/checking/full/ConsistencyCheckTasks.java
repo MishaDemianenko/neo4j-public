@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.neo4j.consistency.checking.NodeRecordCheck;
 import org.neo4j.consistency.checking.PropertyChain;
+import org.neo4j.consistency.checking.RelationshipChain;
 import org.neo4j.consistency.checking.RelationshipRecordCheck;
 import org.neo4j.consistency.checking.SchemaRecordCheck;
 import org.neo4j.consistency.checking.cache.CacheAccess;
@@ -107,7 +108,8 @@ public class ConsistencyCheckTasks
             //RelationshipStore pass - check nodes inUse, FirstInFirst, FirstInSecond using cached info
             processor = multiPass.processor( CheckStage.Stage4_RS_NextRel, NODES );
             multiPass.reDecorateRelationship( processor, RelationshipRecordCheck.relationshipRecordCheckBackwardPass(
-                    new PropertyChain<>( mandatoryProperties.forRelationships( reporter ) ) ) );
+                    new PropertyChain<>( mandatoryProperties.forRelationships( reporter ) ),
+                    new RelationshipChain<>() ) );
             tasks.add( create( CheckStage.Stage4_RS_NextRel.name(), nativeStores.getRelationshipStore(),
                     processor, ROUND_ROBIN ) );
             //NodeStore pass - just cache nextRel and inUse

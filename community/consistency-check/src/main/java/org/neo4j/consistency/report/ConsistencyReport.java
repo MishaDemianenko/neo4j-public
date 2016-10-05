@@ -204,6 +204,12 @@ public interface ConsistencyReport
     interface RelationshipConsistencyReport
             extends PrimitiveConsistencyReport
     {
+        @Documented( "The relationship record is not in use, but referenced from relationships chain." )
+        void notUsedRelationshipReferencedInChain( RelationshipRecord relationshipRecord );
+
+        @Documented( "The relationship record was already part of relationship chain." )
+        void relationshipChainCycle( RelationshipRecord relationshipRecord );
+
         @Documented( "The relationship type field has an illegal value." )
         void illegalRelationshipType();
 

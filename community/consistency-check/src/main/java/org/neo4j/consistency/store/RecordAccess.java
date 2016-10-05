@@ -72,4 +72,6 @@ public interface RecordAccess
     boolean shouldCheck( long id, MultiPassStore store );
 
     CacheAccess cacheAccess();
+
+    Iterator<RelationshipRecord> rawRelationshipChain( long id );
 }

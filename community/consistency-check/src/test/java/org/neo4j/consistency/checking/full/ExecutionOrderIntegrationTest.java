@@ -490,6 +490,12 @@ public class ExecutionOrderIntegrationTest
         }
 
         @Override
+        public Iterator<RelationshipRecord> rawRelationshipChain( long id )
+        {
+            return access.rawRelationshipChain( id );
+        }
+
+        @Override
         public Iterator<PropertyRecord> rawPropertyChain( long firstId )
         {
             return access.rawPropertyChain( firstId );

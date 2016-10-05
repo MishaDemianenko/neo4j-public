@@ -104,6 +104,28 @@ public class DirectRecordAccess implements RecordAccess
     }
 
     @Override
+    public Iterator<RelationshipRecord> rawRelationshipChain( long id )
+    {
+        return new PrefetchingIterator<RelationshipRecord>()
+        {
+            private long next = id;
+
+            @Override
+            protected RelationshipRecord fetchNextOrNull()
+            {
+                if ( Record.NO_NEXT_PROPERTY.is( next ) )
+                {
+                    return null;
+                }
+
+                RelationshipRecord record = referenceTo( access.getRelationshipStore(), next ).record();
+                next = record.getFirstNextRel();
+                return record;
+            }
+        };
+    }
+
+    @Override
     public RecordReference<RelationshipTypeTokenRecord> relationshipType( int id )
     {
         return referenceTo( access.getRelationshipTypeTokenStore(), id );

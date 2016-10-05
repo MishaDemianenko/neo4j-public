@@ -149,4 +149,10 @@ public class DelegatingRecordAccess implements RecordAccess
     {
         return delegate.cacheAccess();
     }
+
+    @Override
+    public Iterator<RelationshipRecord> rawRelationshipChain( long id )
+    {
+        return delegate.rawRelationshipChain( id );
+    }
 }
