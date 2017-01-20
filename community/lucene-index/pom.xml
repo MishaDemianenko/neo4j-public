@@ -105,6 +105,12 @@ the relevant Commercial Agreement.
 
 
     <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-suggest</artifactId>
+      <version>${lucene.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>

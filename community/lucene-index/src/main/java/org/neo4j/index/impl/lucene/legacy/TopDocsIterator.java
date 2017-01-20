@@ -19,9 +19,6 @@
  */
 package org.neo4j.index.impl.lucene.legacy;
 
-import java.io.IOException;
-import java.util.Iterator;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -30,25 +27,32 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldCollector;
 
+import java.io.IOException;
+import java.util.Iterator;
+
 import org.neo4j.helpers.collection.ArrayIterator;
 import org.neo4j.index.lucene.QueryContext;
 
-class TopDocsIterator extends AbstractIndexHits<Document>
+public class TopDocsIterator extends AbstractIndexHits<Document>
 {
     private final Iterator<ScoreDoc> iterator;
     private ScoreDoc currentDoc;
     private final int size;
     private final IndexSearcher searcher;
 
-    TopDocsIterator( Query query, QueryContext context, IndexSearcher searcher ) throws IOException
+    public TopDocsIterator( Query query, QueryContext context, IndexSearcher searcher ) throws IOException
     {
-        TopDocs docs = toTopDocs( query, context, searcher );
-        this.size = docs.scoreDocs.length;
-        this.iterator = new ArrayIterator<>( docs.scoreDocs );
+        this( toTopDocs( query, context, searcher ), searcher );
+    }
+
+    public TopDocsIterator( TopDocs topDocs, IndexSearcher searcher )
+    {
+        this.size = topDocs.scoreDocs.length;
+        this.iterator = new ArrayIterator<>( topDocs.scoreDocs );
         this.searcher = searcher;
     }
 
-    private TopDocs toTopDocs( Query query, QueryContext context, IndexSearcher searcher ) throws IOException
+    private static TopDocs toTopDocs( Query query, QueryContext context, IndexSearcher searcher ) throws IOException
     {
         Sort sorting = context != null ? context.getSorting() : null;
         TopDocs topDocs;

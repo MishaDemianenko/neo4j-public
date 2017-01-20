@@ -20,9 +20,9 @@
 package org.neo4j.index.impl.lucene.legacy;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoubleField;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.FloatField;
@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.neo4j.index.lucene.QueryContext;
@@ -75,7 +76,7 @@ public abstract class IndexType
         @Override
         protected void addNewFieldToDocument( Document document, String key, Object value )
         {
-            document.add( instantiateField( key, value, StringField.TYPE_STORED ) );
+            document.add( instantiateField( key, value, StringField.TYPE_STORED, DefaultCustomIndexTypeFieldFactory.INSTANCE ) );
             document.add( instantiateSortField( key, value ) );
         }
 
@@ -95,18 +96,45 @@ public abstract class IndexType
     private static class CustomType extends IndexType
     {
         public static final String EXACT_FIELD_SUFFIX = "_e";
+        private final IndexFieldFactory fieldFactory;
+        private IndexSearcherFactory indexSearcherFactory;
         private final Similarity similarity;
+        private final Codec codec;
+        private IndexHitsProvider hitsProvider;
 
-        CustomType( Analyzer analyzer, boolean toLowerCase, Similarity similarity )
+        CustomType( Analyzer analyzer, IndexFieldFactory fieldFactory, IndexSearcherFactory indexSearcherFactory,
+                boolean toLowerCase, Similarity similarity, Codec codec, IndexHitsProvider hitsProvider )
         {
             super( analyzer, toLowerCase );
+            this.fieldFactory = fieldFactory;
+            this.indexSearcherFactory = indexSearcherFactory;
             this.similarity = similarity;
+            this.codec = codec;
+            this.hitsProvider = hitsProvider;
+        }
+
+        @Override
+        public IndexSearcherFactory getIndexSearcherFactory()
+        {
+            return indexSearcherFactory;
+        }
+
+        @Override
+        public Optional<Codec> getCodec()
+        {
+            return Optional.ofNullable( codec );
         }
 
         @Override
         Similarity getSimilarity()
         {
             return this.similarity;
+        }
+
+        @Override
+        public IndexHitsProvider getHitsProvider()
+        {
+            return hitsProvider;
         }
 
         @Override
@@ -128,7 +156,7 @@ public abstract class IndexType
         protected void addNewFieldToDocument( Document document, String key, Object value )
         {
             document.add( new StringField( exactKey( key ), value.toString(), Store.YES ) );
-            document.add( instantiateField( key, value, TextField.TYPE_STORED ) );
+            document.add( instantiateField( key, value, TextField.TYPE_STORED, fieldFactory ) );
             document.add( instantiateSortField( key, value ) );
         }
 
@@ -167,6 +195,26 @@ public abstract class IndexType
         this.toLowerCase = toLowerCase;
     }
 
+    public Analyzer getAnalyzer()
+    {
+        return analyzer;
+    }
+
+    public IndexSearcherFactory getIndexSearcherFactory()
+    {
+        return DefaultIndexSearcherFactory.INSTANCE;
+    }
+
+    public Optional<Codec> getCodec()
+    {
+        return Optional.empty();
+    }
+
+    public IndexHitsProvider getHitsProvider()
+    {
+        return null;
+    }
+
     abstract void removeFieldsFromDocument( Document document, String key, Object value );
 
     abstract void removeFieldFromDocument( Document document, String name );
@@ -175,7 +223,7 @@ public abstract class IndexType
 
     abstract Query get( String key, Object value );
 
-    static IndexType getIndexType( Map<String, String> config )
+    public static IndexType getIndexType( Map<String, String> config )
     {
         String type = config.get( LuceneIndexImplementation.KEY_TYPE );
         IndexType result = null;
@@ -183,6 +231,10 @@ public abstract class IndexType
         Boolean toLowerCaseUnbiased = config.get( LuceneIndexImplementation.KEY_TO_LOWER_CASE ) != null ?
                                       parseBoolean( config.get( LuceneIndexImplementation.KEY_TO_LOWER_CASE ), true ) : null;
         Analyzer customAnalyzer = getCustomAnalyzer( config );
+        IndexFieldFactory defaultFieldFactory = getFieldFactory( config );
+        Codec codec = getCodec( config );
+        IndexSearcherFactory indexSearcherFactory = getIndexSearcherFactory( config );
+        IndexHitsProvider hitsProvider = getHitsProvider( config );
         if ( type != null )
         {
             // Use the built in alternatives... "exact" or "fulltext"
@@ -191,7 +243,8 @@ public abstract class IndexType
                 // In the exact case we default to false
                 boolean toLowerCase = TRUE.equals( toLowerCaseUnbiased );
 
-                result = toLowerCase ? new CustomType( new LowerCaseKeywordAnalyzer(), true, similarity ) : EXACT;
+                result = toLowerCase ? new CustomType( new LowerCaseKeywordAnalyzer(), defaultFieldFactory,
+                        indexSearcherFactory,true, similarity, codec, hitsProvider ) : EXACT;
             }
             else if ( "fulltext".equals( type ) )
             {
@@ -204,7 +257,8 @@ public abstract class IndexType
                     analyzer = TRUE.equals( toLowerCase ) ? LuceneDataSource.LOWER_CASE_WHITESPACE_ANALYZER :
                                LuceneDataSource.WHITESPACE_ANALYZER;
                 }
-                result = new CustomType( analyzer, toLowerCase, similarity );
+                result = new CustomType( analyzer, defaultFieldFactory, indexSearcherFactory, toLowerCase,
+                        similarity, codec, hitsProvider );
             }
         }
         else
@@ -220,9 +274,34 @@ public abstract class IndexType
                         " and no 'analyzer' was given either (which can point out a custom " +
                         Analyzer.class.getName() + " to use)" );
             }
-            result = new CustomType( customAnalyzer, toLowerCase, similarity );
+            result = new CustomType( customAnalyzer, defaultFieldFactory, indexSearcherFactory, toLowerCase,
+                    similarity, codec, hitsProvider );
         }
         return result;
+    }
+
+    private static IndexHitsProvider getHitsProvider( Map<String,String> config )
+    {
+        return getByClassName( config, LuceneIndexImplementation.KEY_HITS_PROVIDER, IndexHitsProvider.class );
+    }
+
+    private static IndexSearcherFactory getIndexSearcherFactory( Map<String,String> config )
+    {
+        IndexSearcherFactory searcherFactory =
+                getByClassName( config, LuceneIndexImplementation.KEY_SEARCHER_TYPE_FACTORY, IndexSearcherFactory.class );
+        return searcherFactory != null ? searcherFactory : DefaultIndexSearcherFactory.INSTANCE;
+    }
+
+    private static Codec getCodec( Map<String,String> config )
+    {
+        return getByClassName( config, LuceneIndexImplementation.KEY_CODEC, Codec.class );
+    }
+
+    private static IndexFieldFactory getFieldFactory( Map<String,String> config )
+    {
+        IndexFieldFactory customFieldFactory =
+                getByClassName( config, LuceneIndexImplementation.KEY_FIELD_TYPE_FACTORY, IndexFieldFactory.class );
+        return customFieldFactory != null ? customFieldFactory : DefaultCustomIndexTypeFieldFactory.INSTANCE;
     }
 
     public void addToDocument( Document document, String key, Object value )
@@ -297,7 +376,8 @@ public abstract class IndexType
         }
     }
 
-    public static IndexableField instantiateField( String key, Object value, FieldType fieldType )
+    public static IndexableField instantiateField( String key, Object value, FieldType fieldType, IndexFieldFactory
+            defaultFieldFactory )
     {
         IndexableField field;
         if ( value instanceof Number )
@@ -322,7 +402,7 @@ public abstract class IndexType
         }
         else
         {
-            field = new Field( key, value.toString(), fieldType );
+            field = defaultFieldFactory.createField( key, value, fieldType );
         }
         return field;
     }

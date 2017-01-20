@@ -67,8 +67,8 @@ abstract class IndexReferenceFactory
 
     IndexSearcher newIndexSearcher( IndexIdentifier identifier, IndexReader reader )
     {
-        IndexSearcher searcher = new IndexSearcher( reader );
         IndexType type = getType( identifier );
+        IndexSearcher searcher = type.getIndexSearcherFactory().createIndexSearcher( reader );
         if ( type.getSimilarity() != null )
         {
             searcher.setSimilarity( type.getSimilarity() );

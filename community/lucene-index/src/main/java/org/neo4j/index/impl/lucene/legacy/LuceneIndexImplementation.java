@@ -42,6 +42,10 @@ public class LuceneIndexImplementation extends LifecycleAdapter implements Index
 {
     static final String KEY_TYPE = "type";
     static final String KEY_ANALYZER = "analyzer";
+    static final String KEY_FIELD_TYPE_FACTORY = "type_factory";
+    static final String KEY_CODEC = "codec";
+    static final String KEY_HITS_PROVIDER = "hits_provider";
+    static final String KEY_SEARCHER_TYPE_FACTORY = "searcher_factory";
     static final String KEY_TO_LOWER_CASE = "to_lower_case";
     static final String KEY_SIMILARITY = "similarity";
     public static final String SERVICE_NAME = "lucene";

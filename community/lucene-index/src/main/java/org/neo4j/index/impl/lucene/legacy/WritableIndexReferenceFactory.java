@@ -88,12 +88,16 @@ class WritableIndexReferenceFactory extends IndexReferenceFactory
         {
             Directory indexDirectory = getIndexDirectory( identifier );
             IndexType type = getType( identifier );
-            IndexWriterConfig writerConfig = new IndexWriterConfig( type.analyzer );
+            IndexWriterConfig writerConfig = new IndexWriterConfig( type.getAnalyzer() );
             writerConfig.setIndexDeletionPolicy( new MultipleBackupDeletionPolicy() );
             Similarity similarity = type.getSimilarity();
             if ( similarity != null )
             {
                 writerConfig.setSimilarity( similarity );
+            }
+            if ( type.getCodec().isPresent() )
+            {
+                writerConfig.setCodec( type.getCodec().get() );
             }
             return new IndexWriter( indexDirectory, writerConfig );
         }

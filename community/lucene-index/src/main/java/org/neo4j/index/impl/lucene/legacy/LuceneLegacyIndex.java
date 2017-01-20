@@ -358,9 +358,17 @@ public abstract class LuceneLegacyIndex implements LegacyIndex
                     additionalParametersOrNull.getSorting() : null;
             boolean forceScore = additionalParametersOrNull == null ||
                     !additionalParametersOrNull.getTradeCorrectnessForSpeed();
-            DocValuesCollector collector = new DocValuesCollector( forceScore );
-            searcher.search( query, collector );
-            return collector.getIndexHits( sorting );
+
+            if ( type.getHitsProvider() != null )
+            {
+                return type.getHitsProvider().getIndexHits(searcher, query, forceScore, sorting);
+            }
+            else
+            {
+                DocValuesCollector collector = new DocValuesCollector( forceScore );
+                searcher.search( query, collector );
+                return collector.getIndexHits( sorting );
+            }
         }
         return result;
     }
