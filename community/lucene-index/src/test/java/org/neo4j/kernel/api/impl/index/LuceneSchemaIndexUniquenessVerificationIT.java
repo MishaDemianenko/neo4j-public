@@ -46,7 +46,6 @@ import java.util.stream.IntStream;
 import org.neo4j.helpers.ArrayUtil;
 import org.neo4j.helpers.Exceptions;
 import org.neo4j.helpers.Strings;
-import org.neo4j.io.IOUtils;
 import org.neo4j.kernel.api.exceptions.index.IndexEntryConflictException;
 import org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure;
 import org.neo4j.kernel.api.impl.schema.LuceneSchemaIndexBuilder;
@@ -131,8 +130,7 @@ public class LuceneSchemaIndexUniquenessVerificationIT
     public void resetPartitionSize() throws IOException
     {
         System.setProperty( "luceneSchemaIndex.maxPartitionSize", "" );
-
-        IOUtils.closeAll( index );
+        index.drop();
     }
 
     @Test
