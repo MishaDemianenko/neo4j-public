@@ -17,9 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.causalclustering;
-
-import static org.neo4j.causalclustering.PortConstants.EphemeralPortMaximum;
+package org.neo4j.com.ports.allocation;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,13 +25,15 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class PortRepository
+import static org.neo4j.com.ports.allocation.PortConstants.EphemeralPortMaximum;
+
+class PortRepository
 {
     private final Path directory;
 
     private int currentPort;
 
-    public PortRepository( Path directory, int initialPort )
+    PortRepository( Path directory, int initialPort )
     {
         this.directory = directory;
 
@@ -41,7 +41,7 @@ public class PortRepository
     }
 
     // synchronize between threads in this JVM
-    public synchronized int reserveNextPort( String trace )
+    synchronized int reserveNextPort( String trace )
     {
         while ( currentPort <= EphemeralPortMaximum )
         {

@@ -17,20 +17,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.causalclustering;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.neo4j.causalclustering.PortConstants.EphemeralPortMinimum;
-import static org.neo4j.helpers.collection.Iterators.asSet;
-
-import java.nio.file.Path;
+package org.neo4j.com.ports.allocation;
 
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.nio.file.Path;
+
 import org.neo4j.test.rule.TestDirectory;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.neo4j.com.ports.allocation.PortConstants.EphemeralPortMinimum;
+import static org.neo4j.helpers.collection.Iterators.asSet;
 
 public class PortRepositoryIT
 {
