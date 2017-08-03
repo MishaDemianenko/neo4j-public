@@ -74,7 +74,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
 import static org.neo4j.helpers.collection.Iterators.asIterable;
 import static org.neo4j.helpers.collection.Iterators.asSet;
 import static org.neo4j.helpers.collection.Iterators.iterator;
@@ -491,7 +490,7 @@ public class StateHandlingStatementOperationsTest
         IndexReader indexReader = mock( IndexReader.class );
 
         when( indexReader.query( any() ) ).thenReturn( PrimitiveLongCollections.emptyIterator() );
-        when( storeStatement.getFreshIndexReader( any() ) ).thenReturn( indexReader );
+        when( storeStatement.getIndexReader( any() ) ).thenReturn( indexReader );
         when( kernelStatement.getStoreStatement() ).thenReturn( storeStatement );
 
         StateHandlingStatementOperations operations = newTxStateOps( mock( StoreReadLayer.class ) );
@@ -611,7 +610,6 @@ public class StateHandlingStatementOperationsTest
         when( indexReader.hasFullNumberPrecision() ).thenReturn( true );
         when( indexReader.query( anyVararg() ) )
                 .thenAnswer( invocation -> PrimitiveLongCollections.iterator( nodeId ) );
-        when( storeStatement.getFreshIndexReader( any() ) ).thenReturn( indexReader );
         when( storeStatement.getIndexReader( any() ) ).thenReturn( indexReader );
 
         StateHandlingStatementOperations operations = newTxStateOps( inner );

@@ -33,6 +33,7 @@ public class PartitionSearcher implements Closeable
 {
     private IndexSearcher indexSearcher;
     private ReferenceManager<IndexSearcher> referenceManager;
+    private boolean close;
 
     public PartitionSearcher( ReferenceManager<IndexSearcher> referenceManager ) throws IOException
     {
@@ -49,6 +50,10 @@ public class PartitionSearcher implements Closeable
     @Override
     public void close() throws IOException
     {
-        referenceManager.release( indexSearcher );
+        if ( !close )
+        {
+            referenceManager.release( indexSearcher );
+            close = true;
+        }
     }
 }

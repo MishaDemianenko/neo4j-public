@@ -138,20 +138,6 @@ public interface StorageStatement extends AutoCloseable
     IndexReader getIndexReader( IndexDescriptor index ) throws IndexNotFoundKernelException;
 
     /**
-     * Returns an {@link IndexReader} for searching entity ids given property values. A new reader is allocated
-     * every call to this method, which means that newly committed data since the last call to this method
-     * will be visible in the returned reader.
-     * <p>
-     * <b>NOTE:</b>
-     * It is caller's responsibility to close the returned reader.
-     *
-     * @param index {@link IndexDescriptor} to get reader for.
-     * @return {@link IndexReader} capable of searching entity ids given property values.
-     * @throws IndexNotFoundKernelException if no such index exists.
-     */
-    IndexReader getFreshIndexReader( IndexDescriptor index ) throws IndexNotFoundKernelException;
-
-    /**
      * Access to low level record cursors
      *
      * @return record cursors

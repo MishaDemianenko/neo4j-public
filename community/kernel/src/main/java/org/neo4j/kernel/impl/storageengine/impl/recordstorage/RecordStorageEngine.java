@@ -263,7 +263,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle
 
     private Supplier<StorageStatement> storeStatementSupplier( NeoStores neoStores )
     {
-        Supplier<IndexReaderFactory> indexReaderFactory = () -> new IndexReaderFactory.Caching( indexingService );
+        Supplier<IndexReaderFactory> indexReaderFactory = () -> new IndexReaderFactory( indexingService );
         LockService lockService = takePropertyReadLocks ? this.lockService : NO_LOCK_SERVICE;
 
         return () -> new StoreStatement( neoStores, indexReaderFactory, labelScanStore::newReader, lockService );

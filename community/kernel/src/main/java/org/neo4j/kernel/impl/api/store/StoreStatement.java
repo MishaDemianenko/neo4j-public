@@ -240,12 +240,6 @@ public class StoreStatement implements StorageStatement
     }
 
     @Override
-    public IndexReader getFreshIndexReader( IndexDescriptor descriptor ) throws IndexNotFoundKernelException
-    {
-        return indexReaderFactory().newUnCachedReader( descriptor );
-    }
-
-    @Override
     public RecordCursors recordCursors()
     {
         return recordCursors;

@@ -819,7 +819,7 @@ public class StateHandlingStatementOperations implements
             KernelStatement state, IndexDescriptor index, IndexQuery.ExactPredicate... query )
             throws IndexNotFoundKernelException, IndexBrokenKernelException, IndexNotApplicableKernelException
     {
-        IndexReader reader = state.getStoreStatement().getFreshIndexReader( index );
+        IndexReader reader = state.getStoreStatement().getIndexReader( index );
 
         /* Here we have an intricate scenario where we need to return the PrimitiveLongIterator
          * since subsequent filtering will happen outside, but at the same time have the ability to

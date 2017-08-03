@@ -100,7 +100,6 @@ public class IndexQueryTransactionStateTest
         when( state.getStoreStatement() ).thenReturn( statement );
         indexReader = mock( IndexReader.class );
         when( statement.getIndexReader( indexDescriptor ) ).thenReturn( indexReader );
-        when( statement.getFreshIndexReader( indexDescriptor ) ).thenReturn( indexReader );
 
         StateHandlingStatementOperations stateHandlingOperations = new StateHandlingStatementOperations(
                 store,
