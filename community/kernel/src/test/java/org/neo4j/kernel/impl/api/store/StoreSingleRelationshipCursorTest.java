@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
 import org.neo4j.kernel.impl.locking.LockService;
 import org.neo4j.kernel.impl.store.NeoStores;
 import org.neo4j.kernel.impl.store.RecordCursors;
@@ -109,7 +110,7 @@ public class StoreSingleRelationshipCursorTest
     private StoreFactory getStoreFactory()
     {
         return new StoreFactory( testDirectory.directory(), pageCacheRule.getPageCache( fileSystemRule.get() ),
-                fileSystemRule.get(), NullLogProvider.getInstance() );
+                fileSystemRule.get(), NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
     }
 
     private StoreSingleRelationshipCursor createRelationshipCursor()

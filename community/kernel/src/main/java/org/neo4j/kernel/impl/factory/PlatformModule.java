@@ -29,11 +29,14 @@ import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemLifecycleAdapter;
 import org.neo4j.io.pagecache.PageCache;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
 import org.neo4j.kernel.AvailabilityGuard;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.extension.KernelExtensions;
 import org.neo4j.kernel.extension.UnsatisfiedDependencyStrategies;
 import org.neo4j.kernel.impl.api.LogRotationMonitor;
+import org.neo4j.kernel.impl.context.CursorTransactionContextSupplier;
 import org.neo4j.kernel.impl.logging.LogService;
 import org.neo4j.kernel.impl.logging.StoreLogService;
 import org.neo4j.kernel.impl.pagecache.ConfiguringPageCacheFactory;
@@ -110,6 +113,7 @@ public class PlatformModule
     public final SystemNanoClock clock;
 
     public final StoreCopyCheckPointMutex storeCopyCheckPointMutex;
+    public final CursorContextSupplier cursorContextSupplier;
 
     public PlatformModule( File providedStoreDir, Map<String,String> params, DatabaseInfo databaseInfo,
             GraphDatabaseFacadeFactory.Dependencies externalDependencies, GraphDatabaseFacade graphDatabaseFacade )
@@ -171,7 +175,10 @@ public class PlatformModule
         dependencies.satisfyDependency( firstImplementor(
                 CheckPointerMonitor.class, tracers.checkPointTracer, CheckPointerMonitor.NULL ) );
 
-        pageCache = dependencies.satisfyDependency( createPageCache( fileSystem, config, logging, tracers ) );
+        cursorContextSupplier = createCursorContextSupplier( config );
+        dependencies.satisfyDependency( cursorContextSupplier );
+        pageCache = dependencies.satisfyDependency( createPageCache( fileSystem, config, logging, tracers, cursorContextSupplier ) );
+
         life.add( new PageCacheLifecycle( pageCache ) );
 
         diagnosticsManager = life.add( dependencies
@@ -198,6 +205,12 @@ public class PlatformModule
         dependencies.satisfyDependency( storeCopyCheckPointMutex );
 
         publishPlatformInfo( dependencies.resolveDependency( UsageData.class ) );
+    }
+
+    protected CursorContextSupplier createCursorContextSupplier( Config config )
+    {
+        return config.get( GraphDatabaseSettings.snapshot_query ) ? new CursorTransactionContextSupplier()
+                                                                  : EmptyCursorContextSupplier.INSTANCE;
     }
 
     protected SystemNanoClock createClock()
@@ -277,11 +290,12 @@ public class PlatformModule
     }
 
     protected PageCache createPageCache( FileSystemAbstraction fileSystem, Config config, LogService logging,
-            Tracers tracers )
+            Tracers tracers, CursorContextSupplier cursorContextSupplier )
     {
         Log pageCacheLog = logging.getInternalLog( PageCache.class );
         ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
-                fileSystem, config, tracers.pageCacheTracer, tracers.pageCursorTracerSupplier, pageCacheLog );
+                fileSystem, config, tracers.pageCacheTracer, tracers.pageCursorTracerSupplier, pageCacheLog,
+                cursorContextSupplier );
         PageCache pageCache = pageCacheFactory.getOrCreatePageCache();
 
         if ( config.get( GraphDatabaseSettings.dump_configuration ) )

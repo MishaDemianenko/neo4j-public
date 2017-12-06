@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.neo4j.io.pagecache.PageSwapper;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
 
 final class MuninnReadPageCursor extends MuninnPageCursor
 {
@@ -30,9 +31,10 @@ final class MuninnReadPageCursor extends MuninnPageCursor
     private long lockStamp;
     MuninnReadPageCursor nextCursor;
 
-    MuninnReadPageCursor( CursorPool.CursorSets cursorSets, long victimPage, PageCursorTracer pageCursorTracer )
+    MuninnReadPageCursor( CursorPool.CursorSets cursorSets, long victimPage, PageCursorTracer pageCursorTracer,
+            CursorContext cursorContext )
     {
-        super( victimPage, pageCursorTracer );
+        super( victimPage, pageCursorTracer, cursorContext );
         this.cursorSets = cursorSets;
     }
 
@@ -60,8 +62,22 @@ final class MuninnReadPageCursor extends MuninnPageCursor
         }
         pin( nextPageId, false );
         currentPageId = nextPageId;
+        verifyContext();
         nextPageId++;
         return true;
+    }
+
+    private void verifyContext()
+    {
+        if ( cursorContext.lastClosedTransactionId() == Long.MAX_VALUE )
+        {
+            return;
+        }
+        if ( page.getLastModifiedTxId() > cursorContext.lastClosedTransactionId() ||
+             pagedFile.getHighestEvictedTransactionId() > cursorContext.lastClosedTransactionId() )
+        {
+            cursorContext.markAsDirty();
+        }
     }
 
     @Override

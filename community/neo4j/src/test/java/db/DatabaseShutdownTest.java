@@ -32,6 +32,7 @@ import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.DelegatingPageCache;
 import org.neo4j.io.pagecache.IOLimiter;
 import org.neo4j.io.pagecache.PageCache;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
 import org.neo4j.kernel.NeoStoreDataSource;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.factory.CommunityEditionModule;
@@ -107,10 +108,11 @@ public class DatabaseShutdownTest
                     return new PlatformModule( storeDir, config, databaseInfo, dependencies, graphDatabaseFacade )
                     {
                         @Override
-                        protected PageCache createPageCache( FileSystemAbstraction fileSystem, Config config,
-                                LogService logging, Tracers tracers )
+                        protected PageCache createPageCache( FileSystemAbstraction fileSystem, Config config, LogService logging,
+                                Tracers tracers, CursorContextSupplier cursorContextSupplier )
                         {
-                            PageCache pageCache = super.createPageCache( fileSystem, config, logging, tracers );
+                            PageCache pageCache = super.createPageCache( fileSystem, config, logging, tracers,
+                                    cursorContextSupplier );
                             return new DelegatingPageCache( pageCache )
                             {
                                 @Override

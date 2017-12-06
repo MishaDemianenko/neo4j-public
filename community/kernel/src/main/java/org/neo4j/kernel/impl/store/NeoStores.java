@@ -37,6 +37,8 @@ import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.IOLimiter;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.PagedFile;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
 import org.neo4j.kernel.NeoStoresDiagnostics;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.CountsAccessor;
@@ -104,6 +106,7 @@ public class NeoStores implements AutoCloseable
     private final IdGeneratorFactory idGeneratorFactory;
     private final PageCache pageCache;
     private final LogProvider logProvider;
+    private final CursorContextSupplier cursorContextSupplier;
     private final boolean createIfNotExist;
     private final File storeDir;
     private final File neoStoreFileName;
@@ -121,6 +124,7 @@ public class NeoStores implements AutoCloseable
             PageCache pageCache,
             final LogProvider logProvider,
             FileSystemAbstraction fileSystemAbstraction,
+            CursorContextSupplier cursorContextSupplier,
             RecordFormats recordFormats,
             boolean createIfNotExist,
             StoreType[] storeTypes,
@@ -132,6 +136,7 @@ public class NeoStores implements AutoCloseable
         this.pageCache = pageCache;
         this.logProvider = logProvider;
         this.fileSystemAbstraction = fileSystemAbstraction;
+        this.cursorContextSupplier = cursorContextSupplier;
         this.recordFormats = recordFormats;
         this.createIfNotExist = createIfNotExist;
         this.openOptions = openOptions;
@@ -416,12 +421,13 @@ public class NeoStores implements AutoCloseable
 
     private CountsTracker createWritableCountsTracker( File fileName )
     {
-        return new CountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName );
+        return new CountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName, cursorContextSupplier );
     }
 
     private ReadOnlyCountsTracker createReadOnlyCountsTracker( File fileName )
     {
-        return new ReadOnlyCountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName );
+        return new ReadOnlyCountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName,
+                EmptyCursorContextSupplier.INSTANCE );
     }
 
     private Iterable<CommonAbstractStore> instantiatedRecordStores()

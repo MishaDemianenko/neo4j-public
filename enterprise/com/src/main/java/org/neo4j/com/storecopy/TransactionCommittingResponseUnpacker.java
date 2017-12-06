@@ -23,6 +23,7 @@ import org.neo4j.com.Response;
 import org.neo4j.com.TransactionStream;
 import org.neo4j.com.TransactionStreamResponse;
 import org.neo4j.graphdb.DependencyResolver;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
 import org.neo4j.kernel.impl.api.KernelTransactions;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionRepresentationCommitProcess;
@@ -200,6 +201,11 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
         LogService logService();
 
         KernelTransactions kernelTransactions();
+
+        /**
+         * Cursor context supplier to connect applied transaction with cursors
+         */
+        CursorContextSupplier cursorContext();
     }
 
     /**
@@ -253,12 +259,15 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
         {
             return resolver.resolveDependency( KernelTransactions.class );
         }
+
+        @Override
+        public CursorContextSupplier cursorContext()
+        {
+            return resolver.resolveDependency( CursorContextSupplier.class );
+        }
     }
 
     public static final int DEFAULT_BATCH_SIZE = 100;
-
-    static final String msg = "Kernel panic detected: pulled transactions cannot be applied to a non-healthy database. "
-            + "In order to resolve this issue a manual restart of this instance is required.";
 
     // Assigned in constructor
     private final Dependencies dependencies;
@@ -268,6 +277,7 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
     // Assigned in start()
     private TransactionObligationFulfiller obligationFulfiller;
     private TransactionBatchCommitter batchCommitter;
+    private CursorContextSupplier cursorContextSupplier;
     private Log log;
     // Assigned in stop()
     private volatile boolean stopped;
@@ -295,7 +305,7 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
         }
 
         BatchingResponseHandler responseHandler = new BatchingResponseHandler( maxBatchSize,
-                batchCommitter, obligationFulfiller, txHandler, log );
+                batchCommitter, obligationFulfiller, txHandler, cursorContextSupplier, log );
         try
         {
             response.accept( responseHandler );
@@ -311,6 +321,7 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
     {
         this.obligationFulfiller = dependencies.obligationFulfiller();
         this.log = dependencies.logService().getInternalLog( BatchingResponseHandler.class );
+        this.cursorContextSupplier = dependencies.cursorContext();
         this.batchCommitter = new TransactionBatchCommitter( dependencies.kernelTransactions(), idReuseSafeZoneTime,
                 dependencies.commitProcess(), log );
         this.stopped = false;

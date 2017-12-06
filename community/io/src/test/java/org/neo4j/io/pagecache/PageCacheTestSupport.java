@@ -42,8 +42,10 @@ import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.fs.StoreChannel;
 import org.neo4j.io.pagecache.impl.SingleFilePageSwapperFactory;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
-import org.neo4j.test.rule.RepeatRule;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.test.rule.RepeatRule;
 
 import static org.junit.Assert.assertThat;
 import static org.neo4j.test.matchers.ByteArrayMatcher.byteArray;
@@ -110,15 +112,29 @@ public abstract class PageCacheTestSupport<T extends PageCache>
     protected final T createPageCache( PageSwapperFactory swapperFactory, int maxPages, int pageSize,
             PageCacheTracer tracer, PageCursorTracerSupplier cursorTracerSupplier )
     {
-        return fixture.createPageCache( swapperFactory, maxPages, pageSize, tracer, cursorTracerSupplier );
+        return createPageCache( swapperFactory, maxPages, pageSize, tracer, cursorTracerSupplier,
+                EmptyCursorContextSupplier.INSTANCE );
+    }
+
+    protected final T createPageCache( PageSwapperFactory swapperFactory, int maxPages, int pageSize,
+            PageCacheTracer tracer, PageCursorTracerSupplier cursorTracerSupplier, CursorContextSupplier cursorContextSupplier )
+    {
+        return fixture.createPageCache( swapperFactory, maxPages, pageSize, tracer, cursorTracerSupplier, cursorContextSupplier );
     }
 
     protected T createPageCache( FileSystemAbstraction fs, int maxPages, int pageSize, PageCacheTracer tracer,
             PageCursorTracerSupplier cursorTracerSupplier )
     {
+        return createPageCache( fs, maxPages, pageSize, tracer, cursorTracerSupplier,
+                EmptyCursorContextSupplier.INSTANCE );
+    }
+
+    protected T createPageCache( FileSystemAbstraction fs, int maxPages, int pageSize, PageCacheTracer tracer,
+            PageCursorTracerSupplier cursorTracerSupplier, CursorContextSupplier cursorContextSupplier )
+    {
         PageSwapperFactory swapperFactory = new SingleFilePageSwapperFactory();
         swapperFactory.setFileSystemAbstraction( fs );
-        return createPageCache( swapperFactory, maxPages, pageSize, tracer, cursorTracerSupplier );
+        return createPageCache( swapperFactory, maxPages, pageSize, tracer, cursorTracerSupplier, cursorContextSupplier );
     }
 
     protected final T getPageCache( FileSystemAbstraction fs, int maxPages, int pageSize, PageCacheTracer tracer,
@@ -318,7 +334,7 @@ public abstract class PageCacheTestSupport<T extends PageCache>
     public abstract static class Fixture<T extends PageCache>
     {
         public abstract T createPageCache( PageSwapperFactory swapperFactory, int maxPages, int pageSize,
-                PageCacheTracer tracer, PageCursorTracerSupplier cursorTracerSupplier );
+                PageCacheTracer tracer, PageCursorTracerSupplier cursorTracerSupplier, CursorContextSupplier contextSupplier );
 
         public abstract void tearDownPageCache( T pageCache ) throws IOException;
 

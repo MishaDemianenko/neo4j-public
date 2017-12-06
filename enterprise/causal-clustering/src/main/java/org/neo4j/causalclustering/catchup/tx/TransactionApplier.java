@@ -24,6 +24,7 @@ import org.neo4j.com.TransactionStream;
 import org.neo4j.com.TransactionStreamResponse;
 import org.neo4j.com.storecopy.TransactionObligationFulfiller;
 import org.neo4j.graphdb.DependencyResolver;
+import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionRepresentationCommitProcess;
@@ -47,17 +48,19 @@ import static org.neo4j.storageengine.api.TransactionApplicationMode.EXTERNAL;
 public class TransactionApplier
 {
     private final TransactionRepresentationCommitProcess commitProcess;
+    private CursorContextSupplier cursorContextSupplier;
 
     public TransactionApplier( DependencyResolver resolver )
     {
         commitProcess = new TransactionRepresentationCommitProcess(
                 resolver.resolveDependency( TransactionAppender.class ),
                 resolver.resolveDependency( StorageEngine.class ) );
+        cursorContextSupplier = resolver.resolveDependency( CursorContextSupplier.class );
     }
 
     public void appendToLogAndApplyToStore( CommittedTransactionRepresentation tx ) throws TransactionFailureException
     {
         commitProcess.commit( new TransactionToApply( tx.getTransactionRepresentation(),
-                tx.getCommitEntry().getTxId() ), NULL, EXTERNAL );
+                tx.getCommitEntry().getTxId(), cursorContextSupplier.getCursorContext() ), NULL, EXTERNAL );
     }
 }

@@ -24,6 +24,8 @@ import org.junit.Test;
 import java.io.File;
 import java.util.concurrent.locks.Lock;
 
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -42,7 +44,7 @@ public class ConcurrentMapStateTest
         // given
         long initialVersion = 42;
         when( store.version() ).thenReturn( initialVersion );
-        ConcurrentMapState<?> state = new ConcurrentMapState<>( store, file );
+        ConcurrentMapState<?> state = createMapState();
 
         // when
         long updateVersion = 43;
@@ -60,7 +62,7 @@ public class ConcurrentMapStateTest
         // given
         long initialVersion = 42;
         when( store.version() ).thenReturn( initialVersion );
-        ConcurrentMapState<?> state = new ConcurrentMapState<>( store, file );
+        ConcurrentMapState<?> state = createMapState();
 
         // when
         long updateVersion = 45;
@@ -79,7 +81,7 @@ public class ConcurrentMapStateTest
         // given
         long initialVersion = 42;
         when( store.version() ).thenReturn( initialVersion );
-        ConcurrentMapState<?> state = new ConcurrentMapState<>( store, file );
+        ConcurrentMapState<?> state = createMapState();
 
         // when
         EntryUpdater<?> updater;
@@ -108,7 +110,7 @@ public class ConcurrentMapStateTest
         // given
         long initialVersion = 42;
         when( store.version() ).thenReturn( initialVersion );
-        ConcurrentMapState<?> state = new ConcurrentMapState<>( store, file );
+        ConcurrentMapState<?> state = createMapState();
 
         // when
         EntryUpdater<?> updater;
@@ -137,7 +139,7 @@ public class ConcurrentMapStateTest
         // given
         long initialVersion = 42;
         when( store.version() ).thenReturn( initialVersion );
-        ConcurrentMapState<?> state = new ConcurrentMapState<>( store, file );
+        ConcurrentMapState<?> state = createMapState();
 
         // when
         EntryUpdater<?> updater = state.updater( initialVersion, lock );
@@ -145,5 +147,10 @@ public class ConcurrentMapStateTest
         // expected
         assertEquals( "Empty updater should be used for version less or equal to initial",
                 EntryUpdater.noUpdates(), updater );
+    }
+
+    private ConcurrentMapState<?> createMapState()
+    {
+        return new ConcurrentMapState<>( store, file, EmptyCursorContextSupplier.INSTANCE );
     }
 }
