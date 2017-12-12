@@ -19,11 +19,6 @@
  */
 package org.neo4j.causalclustering.catchup;
 
-import java.net.BindException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandler;
@@ -36,7 +31,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
+
+import java.net.BindException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import org.neo4j.causalclustering.VersionDecoder;
 import org.neo4j.causalclustering.VersionPrepender;
@@ -155,6 +156,7 @@ public class CatchupServer extends LifecycleAdapter
 
                         pipelineAppender.addPipelineHandlerForServer( pipeline, ch );
 
+                        pipeline.addLast( new SnappyFrameEncoder() );
                         pipeline.addLast( new LengthFieldBasedFrameDecoder( Integer.MAX_VALUE, 0, 4, 0, 4 ) );
                         pipeline.addLast( new LengthFieldPrepender( 4 ) );
 

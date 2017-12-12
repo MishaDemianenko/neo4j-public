@@ -19,9 +19,6 @@
  */
 package org.neo4j.causalclustering.core.consensus;
 
-import java.net.BindException;
-import java.util.concurrent.TimeUnit;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -35,6 +32,10 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.compression.SnappyFrameEncoder;
+
+import java.net.BindException;
+import java.util.concurrent.TimeUnit;
 
 import org.neo4j.causalclustering.VersionDecoder;
 import org.neo4j.causalclustering.VersionPrepender;
@@ -133,6 +134,7 @@ public class RaftServer extends LifecycleAdapter implements Inbound<RaftMessages
 
                         pipelineAppender.addPipelineHandlerForServer( pipeline, ch );
 
+                        pipeline.addLast( new SnappyFrameEncoder() );
                         pipeline.addLast( new LengthFieldBasedFrameDecoder( Integer.MAX_VALUE, 0, 4, 0, 4 ) );
                         pipeline.addLast( new LengthFieldPrepender( 4 ) );
 

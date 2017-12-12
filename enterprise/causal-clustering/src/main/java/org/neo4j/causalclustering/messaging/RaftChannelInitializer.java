@@ -23,6 +23,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.compression.SnappyFrameDecoder;
 
 import org.neo4j.causalclustering.VersionPrepender;
 import org.neo4j.causalclustering.core.replication.ReplicatedContent;
@@ -59,6 +60,7 @@ public class RaftChannelInitializer extends ChannelInitializer<SocketChannel>
 
         pipelineAppender.addPipelineHandlerForClient( pipeline, ch );
 
+        pipeline.addLast( new SnappyFrameDecoder( false ) );
         pipeline.addLast( "frameEncoder", new LengthFieldPrepender( 4 ) );
         pipeline.addLast( new VersionPrepender() );
         pipeline.addLast( "raftMessageEncoder", new RaftMessageEncoder( marshal ) );

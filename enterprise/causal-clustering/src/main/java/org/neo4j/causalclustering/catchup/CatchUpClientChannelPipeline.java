@@ -23,6 +23,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.compression.SnappyFrameDecoder;
 
 import org.neo4j.causalclustering.VersionDecoder;
 import org.neo4j.causalclustering.VersionPrepender;
@@ -66,6 +67,7 @@ class CatchUpClientChannelPipeline
 
         pipelineHandlerAppender.addPipelineHandlerForClient( pipeline, ch );
 
+        pipeline.addLast( new SnappyFrameDecoder( false ) );
         pipeline.addLast( new LengthFieldBasedFrameDecoder( Integer.MAX_VALUE, 0, 4, 0, 4 ) );
         pipeline.addLast( new LengthFieldPrepender( 4 ) );
 
