@@ -427,8 +427,7 @@ public class NeoStores implements AutoCloseable
 
     private ReadOnlyCountsTracker createReadOnlyCountsTracker( File fileName )
     {
-        return new ReadOnlyCountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName,
-                EmptyVersionContextSupplier.INSTANCE );
+        return new ReadOnlyCountsTracker( logProvider, fileSystemAbstraction, pageCache, config, fileName );
     }
 
     private Iterable<CommonAbstractStore> instantiatedRecordStores()
