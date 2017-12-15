@@ -49,9 +49,9 @@ import static org.neo4j.kernel.configuration.Settings.TRUE;
 
 public class PageVersionTrackingIT
 {
-    private static final int NUMBER_OF_TRANSACTIONS = 3;
     @Rule
     public final ClusterRule clusterRule = new ClusterRule( getClass() );
+    private static final int NUMBER_OF_TRANSACTIONS = 3;
     private Cluster cluster;
 
     @Before

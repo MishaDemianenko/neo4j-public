@@ -166,7 +166,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
                                             PageCursorTracerSupplier cursorTracerSupplier,
                                             StorageEngine storageEngine,
                                             AccessCapability accessCapability,
-                                            CursorContextSupplier cursorContextSupplier)
+                                            CursorContextSupplier cursorContextSupplier )
     {
         this.operationContainer = operationContainer;
         this.schemaWriteGuard = schemaWriteGuard;

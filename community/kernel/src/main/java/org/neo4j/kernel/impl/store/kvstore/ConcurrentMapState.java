@@ -465,6 +465,8 @@ class ConcurrentMapState<Key> extends ActiveState<Key>
 
     private static class ChangeEntry
     {
+        private byte[] data;
+        private long version;
 
         static ChangeEntry of( byte[] data, long version )
         {
@@ -476,8 +478,5 @@ class ConcurrentMapState<Key> extends ActiveState<Key>
             this.data = data;
             this.version = version;
         }
-
-        private byte[] data;
-        private long version;
     }
 }

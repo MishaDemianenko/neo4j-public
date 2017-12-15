@@ -51,15 +51,14 @@ import static org.mockito.Mockito.when;
 public class SnapshotExecutionEngineTest
 {
     @Rule
-    public DatabaseRule database = new ImpermanentDatabaseRule();
+    public final DatabaseRule database = new ImpermanentDatabaseRule();
 
     private CompatibilityFactory compatibilityFactory;
     private TestSnapshotExecutionEngine executionEngine;
     private CursorContext cursorContext;
     private SnapshotExecutionEngine.QueryExecutor executor;
-    private KernelStatement kernelStatement;
     private TransactionalContext transactionalContext;
-    private Config config = Config.defaults();
+    private final Config config = Config.defaults();
 
     @Before
     public void setUp() throws Exception
@@ -68,7 +67,7 @@ public class SnapshotExecutionEngineTest
 
         compatibilityFactory = mock( CompatibilityFactory.class );
         transactionalContext = mock( TransactionalContext.class );
-        kernelStatement = mock( KernelStatement.class );
+        KernelStatement kernelStatement = mock( KernelStatement.class );
         executor = mock( SnapshotExecutionEngine.QueryExecutor.class );
         cursorContext = mock( CursorContext.class );
 

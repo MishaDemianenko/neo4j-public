@@ -56,9 +56,9 @@ public class UpdatePullerTriggersPageTransactionTrackingIT
 {
     @Rule
     public final ClusterRule clusterRule = new ClusterRule( getClass() );
-    private ClusterManager.ManagedCluster cluster;
     private final Label NODE_LABEL = Label.label( "mark" );
     private final TestCursorTransactionContextSupplier contextSupplier = new TestCursorTransactionContextSupplier();
+    private ClusterManager.ManagedCluster cluster;
 
     @Before
     public void setup() throws Exception

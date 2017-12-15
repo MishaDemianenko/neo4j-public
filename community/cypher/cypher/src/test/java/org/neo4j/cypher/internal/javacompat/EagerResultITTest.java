@@ -77,7 +77,6 @@ public class EagerResultITTest
     private GraphDatabaseService database;
     private TestCursorTransactionContextSupplier testContextSupplier;
     private File storeDir;
-    private TransactionIdStore transactionIdStore;
     private TestCursorContext testCursorContext;
 
     @Before
@@ -87,7 +86,7 @@ public class EagerResultITTest
         testContextSupplier = new TestCursorTransactionContextSupplier();
         database = startRestartableDatabase();
         prepareData();
-        transactionIdStore = getTransactionIdStore();
+        TransactionIdStore transactionIdStore = getTransactionIdStore();
         testCursorContext = new TestCursorContext( transactionIdStore::getLastClosedTransactionId );
         testContextSupplier.setCursorContext( testCursorContext );
     }

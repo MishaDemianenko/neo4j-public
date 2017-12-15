@@ -64,11 +64,18 @@ public class QueryRestartIT
     private GraphDatabaseService database;
     private TestCursorTransactionContextSupplier testContextSupplier;
     private File storeDir;
+    private TestCursorContext testCursorContext;
 
     @Before
     public void setUp()
     {
         storeDir = testDirectory.directory();
+        testContextSupplier = new TestCursorTransactionContextSupplier();
+        database = startSnapshotQueryDb();
+        createData();
+
+        testCursorContext = testCursorContext();
+        testContextSupplier.setCursorContext( testCursorContext );
     }
 
     @After
@@ -81,33 +88,21 @@ public class QueryRestartIT
     }
 
     @Test
-    public void plainExecuteQuery()
+    public void executeQueryWithoutRestarts()
     {
-        database = new CustomGraphDatabaseFactory( new CustomFacadeFactory() ).newEmbeddedDatabase( storeDir );
-        Label label = Label.label( "label" );
-        try ( Transaction transaction = database.beginTx() )
-        {
-            Node node = database.createNode( label );
-            node.setProperty( "c", "d" );
-            transaction.success();
-        }
+        testCursorContext.setWrongLastClosedTxId( false );
 
         Result result = database.execute( "MATCH (n:label) RETURN n.c" );
         while ( result.hasNext() )
         {
             assertEquals( "d", result.next().get( "n.c" ) );
         }
+        assertEquals( 0, testCursorContext.getAdditionalAttempts() );
     }
 
     @Test
     public void executeQueryWithSingleRetry()
     {
-        testContextSupplier = new TestCursorTransactionContextSupplier();
-        database = startSnapshotQueryDb();
-        createData();
-
-        TestCursorContext testCursorContext = testCursorContext();
-        testContextSupplier.setCursorContext( testCursorContext );
         Result result = database.execute( "MATCH (n) RETURN n.c" );
         assertEquals( 1, testCursorContext.getAdditionalAttempts() );
         while ( result.hasNext() )
@@ -119,12 +114,6 @@ public class QueryRestartIT
     @Test
     public void executeCountStoreQueryWithSingleRetry()
     {
-        testContextSupplier = new TestCursorTransactionContextSupplier();
-        database = startSnapshotQueryDb();
-        createData();
-
-        TestCursorContext testCursorContext = testCursorContext();
-        testContextSupplier.setCursorContext( testCursorContext );
         Result result = database.execute( "MATCH (n:toRetry) RETURN count(n)" );
         assertEquals( 1, testCursorContext.getAdditionalAttempts() );
         while ( result.hasNext() )
@@ -136,12 +125,6 @@ public class QueryRestartIT
     @Test
     public void executeLabelScanQueryWithSingleRetry()
     {
-        testContextSupplier = new TestCursorTransactionContextSupplier();
-        database = startSnapshotQueryDb();
-        createData();
-
-        TestCursorContext testCursorContext = testCursorContext();
-        testContextSupplier.setCursorContext( testCursorContext );
         Result result = database.execute( "MATCH (n:toRetry) RETURN n.c" );
         assertEquals( 1, testCursorContext.getAdditionalAttempts() );
         while ( result.hasNext() )
@@ -153,12 +136,6 @@ public class QueryRestartIT
     @Test
     public void queryThatModifyDataAndSeeUnstableSnapshotThrowException()
     {
-        testContextSupplier = new TestCursorTransactionContextSupplier();
-        database = startSnapshotQueryDb();
-        createData();
-
-        TestCursorContext testCursorContext = testCursorContext();
-        testContextSupplier.setCursorContext( testCursorContext );
         try
         {
             database.execute( "MATCH (n:toRetry) CREATE () RETURN n.c" );
@@ -277,6 +254,11 @@ public class QueryRestartIT
         {
             super.markAsDirty();
             wrongLastClosedTxId = false;
+        }
+
+        void setWrongLastClosedTxId( boolean wrongLastClosedTxId )
+        {
+            this.wrongLastClosedTxId = wrongLastClosedTxId;
         }
 
         @Override
