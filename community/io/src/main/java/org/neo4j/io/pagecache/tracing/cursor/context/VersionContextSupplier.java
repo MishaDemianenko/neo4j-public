@@ -21,10 +21,22 @@ package org.neo4j.io.pagecache.tracing.cursor.context;
 
 import java.util.function.LongSupplier;
 
-public interface CursorContextSupplier
+/**
+ * Supplier to create {@link VersionContext} used during version data read and write operations
+ */
+public interface VersionContextSupplier
 {
+    /**
+     * Initialise current supplier with provider of last closed transaction ids
+     * for future version context to be able to get version ids
+     * @param lastClosedTransactionIdSupplier closed transaction id supplier.
+     */
     void init( LongSupplier lastClosedTransactionIdSupplier );
 
-    CursorContext getCursorContext();
+    /**
+     * Provide version context
+     * @return instance of version context
+     */
+    VersionContext getVersionContext();
 
 }

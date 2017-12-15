@@ -25,7 +25,7 @@ import java.util.function.Function;
 import org.neo4j.helpers.collection.Iterables;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.api.TokenNameLookup;
 import org.neo4j.kernel.api.index.SchemaIndexProvider;
 import org.neo4j.kernel.configuration.Config;
@@ -215,7 +215,7 @@ public class RecordStorageEngineRule extends ExternalResource
                     relationshipTypeTokens, schemaStateChangeCallback, constraintSemantics, scheduler, tokenNameLookup,
                     lockService, indexProvider, indexingServiceMonitor, databaseHealth, labelScanStoreProvider,
                     legacyIndexProviderLookup, indexConfigStore, legacyIndexTransactionOrdering, idGeneratorFactory,
-                    idController, EmptyCursorContextSupplier.INSTANCE );
+                    idController, EmptyVersionContextSupplier.INSTANCE );
             this.transactionApplierTransformer = transactionApplierTransformer;
         }
 

@@ -54,7 +54,7 @@ import org.neo4j.io.pagecache.IOLimiter;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.api.exceptions.index.IndexEntryConflictException;
 import org.neo4j.kernel.api.exceptions.schema.AlreadyConstrainedException;
@@ -235,7 +235,7 @@ public class BatchInserterImpl implements BatchInserter, IndexConfigStoreProvide
         this.storeDir = storeDir;
         ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
                 fileSystem, config, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, NullLog.getInstance(),
-                EmptyCursorContextSupplier.INSTANCE );
+                EmptyVersionContextSupplier.INSTANCE );
         PageCache pageCache = pageCacheFactory.getOrCreatePageCache();
         life.add( new PageCacheLifecycle( pageCache ) );
 
@@ -251,7 +251,7 @@ public class BatchInserterImpl implements BatchInserter, IndexConfigStoreProvide
         RecordFormats recordFormats = RecordFormatSelector.selectForStoreOrConfig( config, storeDir, fileSystem,
                 pageCache, internalLogProvider );
         StoreFactory sf = new StoreFactory( this.storeDir, config, idGeneratorFactory, pageCache, fileSystem,
-                recordFormats, internalLogProvider, EmptyCursorContextSupplier.INSTANCE );
+                recordFormats, internalLogProvider, EmptyVersionContextSupplier.INSTANCE );
 
         maxNodeId = recordFormats.node().getMaxId();
 

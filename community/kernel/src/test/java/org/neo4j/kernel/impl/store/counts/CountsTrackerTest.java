@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 
 import org.neo4j.function.IOFunction;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.CountsAccessor;
 import org.neo4j.kernel.impl.api.CountsVisitor;
@@ -218,7 +218,7 @@ public class CountsTrackerTest
             final Barrier.Control barrier = new Barrier.Control();
             CountsTracker tracker = life.add( new CountsTracker(
                     resourceManager.logProvider(), resourceManager.fileSystem(), resourceManager.pageCache(),
-                    Config.empty(), resourceManager.testPath(), EmptyCursorContextSupplier.INSTANCE )
+                    Config.empty(), resourceManager.testPath(), EmptyVersionContextSupplier.INSTANCE )
             {
                 @Override
                 protected boolean include( CountsKey countsKey, ReadableBuffer value )
@@ -411,7 +411,7 @@ public class CountsTrackerTest
     {
         return new CountsTracker( resourceManager.logProvider(), resourceManager.fileSystem(),
                 resourceManager.pageCache(), Config.empty(), resourceManager.testPath(), clock,
-                EmptyCursorContextSupplier.INSTANCE )
+                EmptyVersionContextSupplier.INSTANCE )
                 .setInitializer( new DataInitializer<CountsAccessor.Updater>()
                 {
                     @Override

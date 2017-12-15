@@ -25,7 +25,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.function.LongSupplier;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.ha.transaction.OnDiskLastTxIdGetter;
 import org.neo4j.kernel.impl.store.NeoStores;
 import org.neo4j.kernel.impl.store.StoreFactory;
@@ -56,7 +56,7 @@ public class OnDiskLastTxIdGetterTest
     public void lastTransactionIdIsBaseTxIdWhileNeoStoresAreStopped()
     {
         final StoreFactory storeFactory = new StoreFactory( new File( "store" ), pageCacheRule.getPageCache( fs.get() ),
-                fs.get(), NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+                fs.get(), NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
         final NeoStores neoStores = storeFactory.openAllNeoStores( true );
         neoStores.close();
 

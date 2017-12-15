@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.neo4j.io.pagecache.PageSwapper;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
 
 final class MuninnReadPageCursor extends MuninnPageCursor
 {
@@ -32,9 +32,9 @@ final class MuninnReadPageCursor extends MuninnPageCursor
     MuninnReadPageCursor nextCursor;
 
     MuninnReadPageCursor( CursorPool.CursorSets cursorSets, long victimPage, PageCursorTracer pageCursorTracer,
-            CursorContext cursorContext )
+            VersionContext versionContext )
     {
-        super( victimPage, pageCursorTracer, cursorContext );
+        super( victimPage, pageCursorTracer, versionContext );
         this.cursorSets = cursorSets;
     }
 
@@ -69,14 +69,14 @@ final class MuninnReadPageCursor extends MuninnPageCursor
 
     private void verifyContext()
     {
-        if ( cursorContext.lastClosedTransactionId() == Long.MAX_VALUE )
+        if ( versionContext.lastClosedTransactionId() == Long.MAX_VALUE )
         {
             return;
         }
-        if ( page.getLastModifiedTxId() > cursorContext.lastClosedTransactionId() ||
-             pagedFile.getHighestEvictedTransactionId() > cursorContext.lastClosedTransactionId() )
+        if ( page.getLastModifiedTxId() > versionContext.lastClosedTransactionId() ||
+             pagedFile.getHighestEvictedTransactionId() > versionContext.lastClosedTransactionId() )
         {
-            cursorContext.markAsDirty();
+            versionContext.markAsDirty();
         }
     }
 

@@ -26,8 +26,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 
 @Inherited
 @Target(ElementType.TYPE)
@@ -41,17 +41,17 @@ public @interface State
         CONCURRENT_HASH_MAP
         {
             @Override
-            public <Key> ActiveState<Key> open( ReadableState<Key> store, File file, CursorContextSupplier cursorContextSupplier )
+            public <Key> ActiveState<Key> open( ReadableState<Key> store, File file, VersionContextSupplier versionContextSupplier )
             {
-                return new ConcurrentMapState<>( store, file, cursorContextSupplier );
+                return new ConcurrentMapState<>( store, file, versionContextSupplier );
             }
         },
         READ_ONLY_CONCURRENT_HASH_MAP
         {
             @Override
-            public <Key> ActiveState<Key> open( ReadableState<Key> store, File file, CursorContextSupplier cursorContextSupplier )
+            public <Key> ActiveState<Key> open( ReadableState<Key> store, File file, VersionContextSupplier versionContextSupplier )
             {
-                return new ConcurrentMapState<Key>( store, file, EmptyCursorContextSupplier.INSTANCE )
+                return new ConcurrentMapState<Key>( store, file, EmptyVersionContextSupplier.INSTANCE )
                 {
                     @Override
                     protected boolean hasChanges()

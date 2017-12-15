@@ -26,7 +26,7 @@ import org.neo4j.com.Response;
 import org.neo4j.com.Response.Handler;
 import org.neo4j.com.storecopy.ResponseUnpacker.TxHandler;
 import org.neo4j.helpers.collection.Visitor;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.impl.api.TransactionQueue;
 import org.neo4j.kernel.impl.api.TransactionToApply;
 import org.neo4j.kernel.impl.transaction.CommittedTransactionRepresentation;
@@ -43,17 +43,17 @@ class BatchingResponseHandler implements Response.Handler,
 {
     private final TransactionQueue queue;
     private final TxHandler txHandler;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
     private final TransactionObligationFulfiller obligationFulfiller;
     private final Log log;
 
     BatchingResponseHandler( int maxBatchSize, TransactionQueue.Applier applier,
             TransactionObligationFulfiller obligationFulfiller, TxHandler txHandler,
-            CursorContextSupplier cursorContextSupplier, Log log )
+            VersionContextSupplier versionContextSupplier, Log log )
     {
         this.obligationFulfiller = obligationFulfiller;
         this.txHandler = txHandler;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.queue = new TransactionQueue( maxBatchSize, applier );
         this.log = log;
     }
@@ -93,7 +93,7 @@ class BatchingResponseHandler implements Response.Handler,
         queue.queue( new TransactionToApply(
                 transaction.getTransactionRepresentation(),
                 transaction.getCommitEntry().getTxId(),
-                cursorContextSupplier.getCursorContext() )
+                versionContextSupplier.getVersionContext() )
         {
             @Override
             public void commitment( Commitment commitment, long transactionId )

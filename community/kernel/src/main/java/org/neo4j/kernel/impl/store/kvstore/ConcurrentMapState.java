@@ -30,37 +30,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.impl.transaction.log.TransactionIdStore;
 
 class ConcurrentMapState<Key> extends ActiveState<Key>
 {
     private final ConcurrentMap<Key,ChangeEntry> changes;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
     private final File file;
     private final AtomicLong highestAppliedVersion;
     private final AtomicLong appliedChanges;
     private final AtomicBoolean hasTrackedChanges;
     private final long previousVersion;
 
-    ConcurrentMapState( ReadableState<Key> store, File file, CursorContextSupplier cursorContextSupplier )
+    ConcurrentMapState( ReadableState<Key> store, File file, VersionContextSupplier versionContextSupplier )
     {
-        super( store, cursorContextSupplier );
+        super( store, versionContextSupplier );
         this.previousVersion = store.version();
         this.file = file;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.highestAppliedVersion = new AtomicLong( previousVersion );
         this.changes = new ConcurrentHashMap<>();
         this.appliedChanges = new AtomicLong();
         hasTrackedChanges = new AtomicBoolean();
     }
 
-    private ConcurrentMapState( Prototype<Key> prototype, ReadableState<Key> store, File file, CursorContextSupplier cursorContextSupplier )
+    private ConcurrentMapState( Prototype<Key> prototype, ReadableState<Key> store, File file, VersionContextSupplier versionContextSupplier )
     {
-        super( store, cursorContextSupplier );
+        super( store, versionContextSupplier );
         this.previousVersion = store.version();
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.file = file;
         this.hasTrackedChanges = prototype.hasTrackedChanges;
         this.changes = prototype.changes;
@@ -231,23 +231,23 @@ class ConcurrentMapState<Key> extends ActiveState<Key>
     {
         final ConcurrentMap<Key, ChangeEntry> changes = new ConcurrentHashMap<>();
         final AtomicLong highestAppliedVersion, appliedChanges = new AtomicLong();
-        final CursorContextSupplier cursorContextSupplier;
+        final VersionContextSupplier versionContextSupplier;
         final AtomicBoolean hasTrackedChanges;
         private final long threshold;
 
         Prototype( ConcurrentMapState<Key> state, long version )
         {
             super( state );
-            this.cursorContextSupplier = state.cursorContextSupplier;
+            this.versionContextSupplier = state.versionContextSupplier;
             threshold = version;
             hasTrackedChanges = new AtomicBoolean();
             this.highestAppliedVersion = new AtomicLong( version );
         }
 
         @Override
-        protected ActiveState<Key> create( ReadableState<Key> sub, File file, CursorContextSupplier cursorContextSupplier )
+        protected ActiveState<Key> create( ReadableState<Key> sub, File file, VersionContextSupplier versionContextSupplier )
         {
-            return new ConcurrentMapState<>( this, sub, file, cursorContextSupplier );
+            return new ConcurrentMapState<>( this, sub, file, versionContextSupplier );
         }
 
         @Override
@@ -287,7 +287,7 @@ class ConcurrentMapState<Key> extends ActiveState<Key>
         @Override
         protected boolean lookup( Key key, ValueSink sink ) throws IOException
         {
-            return performLookup( store, cursorContextSupplier.getCursorContext(), changes, key, sink );
+            return performLookup( store, versionContextSupplier.getVersionContext(), changes, key, sink );
         }
 
         @Override
@@ -352,18 +352,18 @@ class ConcurrentMapState<Key> extends ActiveState<Key>
     @Override
     protected boolean lookup( Key key, ValueSink sink ) throws IOException
     {
-        return performLookup( store, cursorContextSupplier.getCursorContext(), changes, key, sink );
+        return performLookup( store, versionContextSupplier.getVersionContext(), changes, key, sink );
     }
 
-    private static <Key> boolean performLookup( ReadableState<Key> store, CursorContext cursorContext,
+    private static <Key> boolean performLookup( ReadableState<Key> store, VersionContext versionContext,
             ConcurrentMap<Key,ChangeEntry> changes, Key key, ValueSink sink  ) throws IOException
     {
         ChangeEntry change = changes.get( key );
         if ( change != null )
         {
-            if ( change.version > cursorContext.lastClosedTransactionId() )
+            if ( change.version > versionContext.lastClosedTransactionId() )
             {
-                cursorContext.markAsDirty();
+                versionContext.markAsDirty();
             }
             sink.value( new BigEndianByteArrayBuffer( change.data ) );
             return true;

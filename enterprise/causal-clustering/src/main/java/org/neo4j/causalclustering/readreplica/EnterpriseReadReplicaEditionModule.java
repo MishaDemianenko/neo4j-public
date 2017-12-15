@@ -211,7 +211,7 @@ public class EnterpriseReadReplicaEditionModule extends EditionModule
         int maxBatchSize = config.get( CausalClusteringSettings.read_replica_transaction_applier_batch_size );
         BatchingTxApplier batchingTxApplier =
                 new BatchingTxApplier( maxBatchSize, dependencies.provideDependency( TransactionIdStore.class ),
-                        writableCommitProcess, platformModule.monitors, logProvider, platformModule.cursorContextSupplier );
+                        writableCommitProcess, platformModule.monitors, logProvider, platformModule.versionContextSupplier );
 
         DelayedRenewableTimeoutService catchupTimeoutService =
                 new DelayedRenewableTimeoutService( Clocks.systemClock(), logProvider );

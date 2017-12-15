@@ -48,7 +48,7 @@ import org.neo4j.io.pagecache.tracing.MajorFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.PageFaultEvent;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.unsafe.impl.internal.dragons.MemoryManager;
 import org.neo4j.unsafe.impl.internal.dragons.UnsafeUtil;
 
@@ -197,7 +197,7 @@ public class MuninnPageCache implements PageCache
     // 'true' (the default) if we should print any exceptions we get when unmapping a file.
     private boolean printExceptionsOnClose;
     private PageCursorTracerSupplier pageCursorTracerSupplier;
-    private CursorContextSupplier cursorContextSupplier;
+    private VersionContextSupplier versionContextSupplier;
 
     /**
      * Create page cache
@@ -206,10 +206,10 @@ public class MuninnPageCache implements PageCache
      * @param cachePageSize page cache size
      * @param pageCacheTracer global page cache tracer
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracer that will provide
-     * @param cursorContextSupplier TODO
+     * @param versionContextSupplier TODO
      */
     public MuninnPageCache( PageSwapperFactory swapperFactory, int maxPages, int cachePageSize, PageCacheTracer pageCacheTracer,
-            PageCursorTracerSupplier pageCursorTracerSupplier, CursorContextSupplier cursorContextSupplier )
+            PageCursorTracerSupplier pageCursorTracerSupplier, VersionContextSupplier versionContextSupplier )
     {
         verifyHacks();
         verifyCachePageSizeIsPowerOfTwo( cachePageSize );
@@ -221,7 +221,7 @@ public class MuninnPageCache implements PageCache
         this.keepFree = Math.min( pagesToKeepFree, maxPages / 2 );
         this.pageCacheTracer = pageCacheTracer;
         this.pageCursorTracerSupplier = pageCursorTracerSupplier;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.pages = new MuninnPage[maxPages];
         this.printExceptionsOnClose = true;
 
@@ -366,7 +366,7 @@ public class MuninnPageCache implements PageCache
                 file,
                 this,
                 filePageSize,
-                swapperFactory, pageCacheTracer, pageCursorTracerSupplier, cursorContextSupplier,
+                swapperFactory, pageCacheTracer, pageCursorTracerSupplier, versionContextSupplier,
                 createIfNotExists,
                 truncateExisting );
         pagedFile.incrementRefCount();

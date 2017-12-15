@@ -25,8 +25,8 @@ import java.util.function.Consumer;
 
 import org.neo4j.causalclustering.core.state.Result;
 import org.neo4j.causalclustering.core.state.machines.StateMachine;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionToApply;
@@ -52,17 +52,17 @@ public class ReplicatedTokenStateMachine<TOKEN extends Token> implements StateMa
 
     private final TokenRegistry<TOKEN> tokenRegistry;
     private final TokenFactory<TOKEN> tokenFactory;
-    private final CursorContext cursorContext;
+    private final VersionContext versionContext;
 
     private final Log log;
     private long lastCommittedIndex = -1;
 
     public ReplicatedTokenStateMachine( TokenRegistry<TOKEN> tokenRegistry, TokenFactory<TOKEN> tokenFactory,
-            LogProvider logProvider, CursorContextSupplier cursorContextSupplier )
+            LogProvider logProvider, VersionContextSupplier versionContextSupplier )
     {
         this.tokenRegistry = tokenRegistry;
         this.tokenFactory = tokenFactory;
-        this.cursorContext = cursorContextSupplier.getCursorContext();
+        this.versionContext = versionContextSupplier.getVersionContext();
         this.log = logProvider.getLog( getClass() );
     }
 
@@ -112,7 +112,7 @@ public class ReplicatedTokenStateMachine<TOKEN extends Token> implements StateMa
 
         try ( LockGroup ignored = new LockGroup() )
         {
-            commitProcess.commit( new TransactionToApply( representation, cursorContext ), CommitEvent.NULL,
+            commitProcess.commit( new TransactionToApply( representation, versionContext ), CommitEvent.NULL,
                     TransactionApplicationMode.EXTERNAL );
         }
         catch ( TransactionFailureException e )

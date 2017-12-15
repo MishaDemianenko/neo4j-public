@@ -24,7 +24,7 @@ import java.util.Map;
 import org.neo4j.cypher.internal.CompatibilityFactory;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
 import org.neo4j.kernel.GraphDatabaseQueryService;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.KernelStatement;
@@ -60,7 +60,7 @@ public class SnapshotExecutionEngine extends ExecutionEngine
     protected Result executeWithRetries( String query, Map<String,Object> parameters, TransactionalContext context,
             QueryExecutor executor ) throws QueryExecutionKernelException
     {
-        CursorContext cursorContext = getCursorContext( context );
+        VersionContext versionContext = getCursorContext( context );
         EagerResult eagerResult;
         int attempt = 0;
         boolean dirtySnapshot;
@@ -72,11 +72,11 @@ public class SnapshotExecutionEngine extends ExecutionEngine
                         "Unable to get clean data snapshot for query '%s' after %d attempts.", query, attempt ) );
             }
             attempt++;
-            cursorContext.initRead();
+            versionContext.initRead();
             Result result = executor.execute( query, parameters, context );
             eagerResult = new EagerResult( result );
             eagerResult.consume();
-            dirtySnapshot = cursorContext.isDirty();
+            dirtySnapshot = versionContext.isDirty();
             if ( dirtySnapshot && result.getQueryStatistics().containsUpdates() )
             {
                 throw new QueryExecutionKernelException( new UnstableSnapshotException(
@@ -87,9 +87,9 @@ public class SnapshotExecutionEngine extends ExecutionEngine
         return eagerResult;
     }
 
-    private static CursorContext getCursorContext( TransactionalContext context )
+    private static VersionContext getCursorContext( TransactionalContext context )
     {
-        return ((KernelStatement) context.statement()).getCursorContext();
+        return ((KernelStatement) context.statement()).getVersionContext();
     }
 
     @FunctionalInterface

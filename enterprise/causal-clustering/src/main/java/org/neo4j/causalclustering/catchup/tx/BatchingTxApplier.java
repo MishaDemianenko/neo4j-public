@@ -21,7 +21,7 @@ package org.neo4j.causalclustering.catchup.tx;
 
 import java.util.function.Supplier;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionQueue;
 import org.neo4j.kernel.impl.api.TransactionToApply;
@@ -45,7 +45,7 @@ public class BatchingTxApplier extends LifecycleAdapter
     private final Supplier<TransactionCommitProcess> commitProcessSupplier;
 
     private final PullRequestMonitor monitor;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
     private final Log log;
 
     private TransactionQueue txQueue;
@@ -56,14 +56,14 @@ public class BatchingTxApplier extends LifecycleAdapter
 
     public BatchingTxApplier( int maxBatchSize, Supplier<TransactionIdStore> txIdStoreSupplier,
             Supplier<TransactionCommitProcess> commitProcessSupplier, Monitors monitors, LogProvider logProvider,
-            CursorContextSupplier cursorContextSupplier )
+            VersionContextSupplier versionContextSupplier )
     {
         this.maxBatchSize = maxBatchSize;
         this.txIdStoreSupplier = txIdStoreSupplier;
         this.commitProcessSupplier = commitProcessSupplier;
         this.log = logProvider.getLog( getClass() );
         this.monitor = monitors.newMonitor( PullRequestMonitor.class );
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class BatchingTxApplier extends LifecycleAdapter
             return;
         }
 
-        txQueue.queue( new TransactionToApply( tx.getTransactionRepresentation(), receivedTxId, cursorContextSupplier.getCursorContext() ) );
+        txQueue.queue( new TransactionToApply( tx.getTransactionRepresentation(), receivedTxId, versionContextSupplier.getVersionContext() ) );
 
         if ( !stopped )
         {

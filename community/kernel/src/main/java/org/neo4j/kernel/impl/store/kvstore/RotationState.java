@@ -91,7 +91,7 @@ abstract class RotationState<Key> extends ProgressiveState<Key>
             Pair<File, KeyValueStoreFile> next = strategy
                     .next( file(), updateHeaders( headersUpdater ), keyFormat().filter( preState.dataProvider() ) );
             return postState.create( ReadableState.store( preState.keyFormat(), next.other() ), next.first(),
-                    preState.cursorContextSupplier );
+                    preState.versionContextSupplier );
         }
 
         @Override

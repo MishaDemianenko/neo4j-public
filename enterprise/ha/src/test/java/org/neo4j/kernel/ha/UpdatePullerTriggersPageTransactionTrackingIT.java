@@ -35,11 +35,11 @@ import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.graphdb.factory.GraphDatabaseFactoryState;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.factory.TestHighlyAvailableGraphDatabaseFactory;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.ha.factory.HighlyAvailableEditionModule;
-import org.neo4j.kernel.impl.context.CursorTransactionContextSupplier;
+import org.neo4j.kernel.impl.context.TransactionVersionContextSupplier;
 import org.neo4j.kernel.impl.factory.DatabaseInfo;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacadeFactory;
@@ -57,7 +57,7 @@ public class UpdatePullerTriggersPageTransactionTrackingIT
     @Rule
     public final ClusterRule clusterRule = new ClusterRule( getClass() );
     private final Label NODE_LABEL = Label.label( "mark" );
-    private final TestCursorTransactionContextSupplier contextSupplier = new TestCursorTransactionContextSupplier();
+    private final TestTransactionVersionContextSupplier contextSupplier = new TestTransactionVersionContextSupplier();
     private ClusterManager.ManagedCluster cluster;
 
     @Before
@@ -162,7 +162,7 @@ public class UpdatePullerTriggersPageTransactionTrackingIT
             return new PlatformModule( storeDir, config, databaseInfo, dependencies, graphDatabaseFacade )
             {
                 @Override
-                protected CursorContextSupplier createCursorContextSupplier( Config config )
+                protected VersionContextSupplier createCursorContextSupplier( Config config )
                 {
                     return contextSupplier;
                 }
@@ -170,7 +170,7 @@ public class UpdatePullerTriggersPageTransactionTrackingIT
         }
     }
 
-    private class TestCursorTransactionContextSupplier extends CursorTransactionContextSupplier
+    private class TestTransactionVersionContextSupplier extends TransactionVersionContextSupplier
     {
 
         private volatile ByzantineLongSupplier byzantineLongSupplier;
@@ -183,9 +183,9 @@ public class UpdatePullerTriggersPageTransactionTrackingIT
         }
 
         @Override
-        public CursorContext getCursorContext()
+        public VersionContext getVersionContext()
         {
-            return super.getCursorContext();
+            return super.getVersionContext();
         }
 
         ByzantineLongSupplier getByzantineIdSupplier()

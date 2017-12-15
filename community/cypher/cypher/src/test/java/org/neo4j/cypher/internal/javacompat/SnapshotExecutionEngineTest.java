@@ -29,7 +29,7 @@ import java.util.Map;
 import org.neo4j.cypher.internal.CompatibilityFactory;
 import org.neo4j.cypher.javacompat.internal.GraphDatabaseCypherService;
 import org.neo4j.graphdb.Result;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
 import org.neo4j.kernel.GraphDatabaseQueryService;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.KernelStatement;
@@ -55,7 +55,7 @@ public class SnapshotExecutionEngineTest
 
     private CompatibilityFactory compatibilityFactory;
     private TestSnapshotExecutionEngine executionEngine;
-    private CursorContext cursorContext;
+    private VersionContext versionContext;
     private SnapshotExecutionEngine.QueryExecutor executor;
     private TransactionalContext transactionalContext;
     private final Config config = Config.defaults();
@@ -69,10 +69,10 @@ public class SnapshotExecutionEngineTest
         transactionalContext = mock( TransactionalContext.class );
         KernelStatement kernelStatement = mock( KernelStatement.class );
         executor = mock( SnapshotExecutionEngine.QueryExecutor.class );
-        cursorContext = mock( CursorContext.class );
+        versionContext = mock( VersionContext.class );
 
         executionEngine = createExecutionEngine(cypherService);
-        when( kernelStatement.getCursorContext() ).thenReturn( cursorContext );
+        when( kernelStatement.getVersionContext() ).thenReturn( versionContext );
         when( transactionalContext.statement() ).thenReturn( kernelStatement );
         Result result = mock( Result.class );
         when( result.getQueryStatistics() ).thenReturn( mock( QueryStatistics.class ) );
@@ -85,24 +85,24 @@ public class SnapshotExecutionEngineTest
         executionEngine.executeWithRetries( "query", Collections.emptyMap(), transactionalContext, executor );
 
         verify( executor, times( 1 ) ).execute( any(), anyMap(), any() );
-        verify( cursorContext, times( 1 ) ).initRead();
+        verify( versionContext, times( 1 ) ).initRead();
     }
 
     @Test
     public void executeQueryAfterSeveralRetries() throws QueryExecutionKernelException
     {
-        when( cursorContext.isDirty() ).thenReturn( true, true, false );
+        when( versionContext.isDirty() ).thenReturn( true, true, false );
 
         executionEngine.executeWithRetries( "query", Collections.emptyMap(), transactionalContext, executor );
 
         verify( executor, times( 3 ) ).execute( any(), anyMap(), any() );
-        verify( cursorContext, times( 3 ) ).initRead();
+        verify( versionContext, times( 3 ) ).initRead();
     }
 
     @Test
     public void failQueryAfterMaxRetriesReached() throws QueryExecutionKernelException
     {
-        when( cursorContext.isDirty() ).thenReturn( true );
+        when( versionContext.isDirty() ).thenReturn( true );
 
         try
         {
@@ -114,7 +114,7 @@ public class SnapshotExecutionEngineTest
         }
 
         verify( executor, times( 5 ) ).execute( any(), anyMap(), any() );
-        verify( cursorContext, times( 5 ) ).initRead();
+        verify( versionContext, times( 5 ) ).initRead();
     }
 
     private class TestSnapshotExecutionEngine extends SnapshotExecutionEngine

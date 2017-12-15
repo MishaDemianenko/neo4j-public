@@ -33,7 +33,7 @@ import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.IOLimiter;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.api.TokenNameLookup;
 import org.neo4j.kernel.api.exceptions.TransactionApplyKernelException;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
@@ -172,7 +172,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle
             IdOrderingQueue legacyIndexTransactionOrdering,
             IdGeneratorFactory idGeneratorFactory,
             IdController idController,
-            CursorContextSupplier cursorContextSupplier )
+            VersionContextSupplier versionContextSupplier )
     {
         this.propertyKeyTokenHolder = propertyKeyTokenHolder;
         this.relationshipTypeTokenHolder = relationshipTypeTokens;
@@ -187,7 +187,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle
 
         this.idController = idController;
         StoreFactory factory = new StoreFactory( storeDir, config, idGeneratorFactory, pageCache, fs, logProvider,
-                cursorContextSupplier );
+                versionContextSupplier );
         neoStores = factory.openAllNeoStores( true );
 
         try

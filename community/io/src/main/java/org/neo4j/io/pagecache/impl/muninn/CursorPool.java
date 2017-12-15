@@ -22,7 +22,7 @@ package org.neo4j.io.pagecache.impl.muninn;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 
 final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
 {
@@ -30,7 +30,7 @@ final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
     private final long victimPage;
     private final PageCursorTracerSupplier pageCursorTracerSupplier;
     private PageCacheTracer pageCacheTracer;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
 
     /**
      * Cursor pool construction
@@ -38,16 +38,16 @@ final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracers that will
      * provide thread local page cache statistics
      * @param pageCacheTracer global page cache tracer
-     * @param cursorContextSupplier
+     * @param versionContextSupplier
      */
     CursorPool( MuninnPagedFile pagedFile, PageCursorTracerSupplier pageCursorTracerSupplier,
-            PageCacheTracer pageCacheTracer, CursorContextSupplier cursorContextSupplier )
+            PageCacheTracer pageCacheTracer, VersionContextSupplier versionContextSupplier )
     {
         this.pagedFile = pagedFile;
         this.victimPage = pagedFile.pageCache.victimPage;
         this.pageCursorTracerSupplier = pageCursorTracerSupplier;
         this.pageCacheTracer = pageCacheTracer;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
     }
 
     @Override
@@ -74,7 +74,8 @@ final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
 
     private MuninnReadPageCursor createReadCursor( CursorSets cursorSets )
     {
-        MuninnReadPageCursor cursor = new MuninnReadPageCursor( cursorSets, victimPage, getPageCursorTracer(), cursorContextSupplier.getCursorContext() );
+        MuninnReadPageCursor cursor = new MuninnReadPageCursor( cursorSets, victimPage, getPageCursorTracer(), versionContextSupplier
+                .getVersionContext() );
         cursor.initialiseFile( pagedFile );
         return cursor;
     }
@@ -97,7 +98,8 @@ final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
 
     private MuninnWritePageCursor createWriteCursor( CursorSets cursorSets )
     {
-        MuninnWritePageCursor cursor = new MuninnWritePageCursor( cursorSets, victimPage, getPageCursorTracer(), cursorContextSupplier.getCursorContext() );
+        MuninnWritePageCursor cursor = new MuninnWritePageCursor( cursorSets, victimPage, getPageCursorTracer(), versionContextSupplier
+                .getVersionContext() );
         cursor.initialiseFile( pagedFile );
         return cursor;
     }

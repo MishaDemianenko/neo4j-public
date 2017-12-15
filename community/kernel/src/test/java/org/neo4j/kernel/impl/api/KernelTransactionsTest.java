@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.neo4j.graphdb.DatabaseShutdownException;
 import org.neo4j.graphdb.security.AuthorizationExpiredException;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.AvailabilityGuard;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.KernelTransactionHandle;
@@ -563,7 +563,7 @@ public class KernelTransactionsTest
                 commitProcess, null, null, new TransactionHooks(), mock( TransactionMonitor.class ),
                 availabilityGuard,
                 tracers, storageEngine, new Procedures(), transactionIdStore, clock, new CanWrite(),
-                EmptyCursorContextSupplier.INSTANCE );
+                EmptyVersionContextSupplier.INSTANCE );
     }
 
     private static TestKernelTransactions createTestTransactions( StorageEngine storageEngine,
@@ -575,7 +575,7 @@ public class KernelTransactionsTest
                 null, DEFAULT,
                 commitProcess, null, null, new TransactionHooks(), mock( TransactionMonitor.class ),
                 availabilityGuard, tracers, storageEngine, new Procedures(), transactionIdStore, clock,
-                new CanWrite(), EmptyCursorContextSupplier.INSTANCE );
+                new CanWrite(), EmptyVersionContextSupplier.INSTANCE );
     }
 
     private static TransactionCommitProcess newRememberingCommitProcess( final TransactionRepresentation[] slot )
@@ -624,13 +624,13 @@ public class KernelTransactionsTest
                 LegacyIndexProviderLookup legacyIndexProviderLookup, TransactionHooks hooks,
                 TransactionMonitor transactionMonitor, AvailabilityGuard availabilityGuard, Tracers tracers,
                 StorageEngine storageEngine, Procedures procedures, TransactionIdStore transactionIdStore, Clock clock,
-                AccessCapability accessCapability, CursorContextSupplier cursorContextSupplier )
+                AccessCapability accessCapability, VersionContextSupplier versionContextSupplier )
         {
             super( statementLocksFactory, constraintIndexCreator, statementOperationsContianer, schemaWriteGuard,
                     txHeaderFactory, transactionCommitProcess, indexConfigStore, legacyIndexProviderLookup, hooks,
                     transactionMonitor, availabilityGuard, tracers, storageEngine, procedures, transactionIdStore,
                     clock,
-                    accessCapability, cursorContextSupplier );
+                    accessCapability, versionContextSupplier );
         }
 
         @Override

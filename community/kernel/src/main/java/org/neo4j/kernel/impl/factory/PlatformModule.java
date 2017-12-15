@@ -29,14 +29,14 @@ import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemLifecycleAdapter;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.AvailabilityGuard;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.extension.KernelExtensions;
 import org.neo4j.kernel.extension.UnsatisfiedDependencyStrategies;
 import org.neo4j.kernel.impl.api.LogRotationMonitor;
-import org.neo4j.kernel.impl.context.CursorTransactionContextSupplier;
+import org.neo4j.kernel.impl.context.TransactionVersionContextSupplier;
 import org.neo4j.kernel.impl.logging.LogService;
 import org.neo4j.kernel.impl.logging.StoreLogService;
 import org.neo4j.kernel.impl.pagecache.ConfiguringPageCacheFactory;
@@ -113,7 +113,7 @@ public class PlatformModule
     public final SystemNanoClock clock;
 
     public final StoreCopyCheckPointMutex storeCopyCheckPointMutex;
-    public final CursorContextSupplier cursorContextSupplier;
+    public final VersionContextSupplier versionContextSupplier;
 
     public PlatformModule( File providedStoreDir, Map<String,String> params, DatabaseInfo databaseInfo,
             GraphDatabaseFacadeFactory.Dependencies externalDependencies, GraphDatabaseFacade graphDatabaseFacade )
@@ -175,9 +175,10 @@ public class PlatformModule
         dependencies.satisfyDependency( firstImplementor(
                 CheckPointerMonitor.class, tracers.checkPointTracer, CheckPointerMonitor.NULL ) );
 
-        cursorContextSupplier = createCursorContextSupplier( config );
-        dependencies.satisfyDependency( cursorContextSupplier );
-        pageCache = dependencies.satisfyDependency( createPageCache( fileSystem, config, logging, tracers, cursorContextSupplier ) );
+        versionContextSupplier = createCursorContextSupplier( config );
+        dependencies.satisfyDependency( versionContextSupplier );
+        pageCache = dependencies.satisfyDependency( createPageCache( fileSystem, config, logging, tracers,
+                versionContextSupplier ) );
 
         life.add( new PageCacheLifecycle( pageCache ) );
 
@@ -207,10 +208,10 @@ public class PlatformModule
         publishPlatformInfo( dependencies.resolveDependency( UsageData.class ) );
     }
 
-    protected CursorContextSupplier createCursorContextSupplier( Config config )
+    protected VersionContextSupplier createCursorContextSupplier( Config config )
     {
-        return config.get( GraphDatabaseSettings.snapshot_query ) ? new CursorTransactionContextSupplier()
-                                                                  : EmptyCursorContextSupplier.INSTANCE;
+        return config.get( GraphDatabaseSettings.snapshot_query ) ? new TransactionVersionContextSupplier()
+                                                                  : EmptyVersionContextSupplier.INSTANCE;
     }
 
     protected SystemNanoClock createClock()
@@ -290,12 +291,12 @@ public class PlatformModule
     }
 
     protected PageCache createPageCache( FileSystemAbstraction fileSystem, Config config, LogService logging,
-            Tracers tracers, CursorContextSupplier cursorContextSupplier )
+            Tracers tracers, VersionContextSupplier versionContextSupplier )
     {
         Log pageCacheLog = logging.getInternalLog( PageCache.class );
         ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
                 fileSystem, config, tracers.pageCacheTracer, tracers.pageCursorTracerSupplier, pageCacheLog,
-                cursorContextSupplier );
+                versionContextSupplier );
         PageCache pageCache = pageCacheFactory.getOrCreatePageCache();
 
         if ( config.get( GraphDatabaseSettings.dump_configuration ) )

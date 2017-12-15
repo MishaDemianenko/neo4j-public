@@ -32,7 +32,7 @@ import org.neo4j.io.pagecache.FileHandle;
 import org.neo4j.io.pagecache.IOLimiter;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.PagedFile;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.extension.KernelExtensionFactory;
 import org.neo4j.kernel.impl.enterprise.EnterpriseEditionModule;
@@ -137,7 +137,7 @@ public class ExternallyManagedPageCache implements PageCache
                     {
                         @Override
                         protected PageCache createPageCache( FileSystemAbstraction fileSystem, Config config, LogService logging,
-                                Tracers tracers, CursorContextSupplier cursorContextSupplier )
+                                Tracers tracers, VersionContextSupplier versionContextSupplier )
                         {
                             return new ExternallyManagedPageCache( delegatePageCache );
                         }

@@ -27,7 +27,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.concurrent.CountDownLatch;
 
 import org.neo4j.helpers.collection.Iterables;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionToApply;
@@ -57,7 +57,7 @@ public class BatchingTxApplierTest
     private final int maxBatchSize = 16;
 
     private final BatchingTxApplier txApplier = new BatchingTxApplier( maxBatchSize, () -> idStore, () -> commitProcess,
-            new Monitors(), NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+            new Monitors(), NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
 
     @Before
     public void before() throws Throwable

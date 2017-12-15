@@ -19,20 +19,55 @@
  */
 package org.neo4j.io.pagecache.tracing.cursor.context;
 
-public interface CursorContext
+/**
+ * {@link VersionContext} that does not perform any kind of version tracking for cases when its not required.
+ * @see VersionContext
+ */
+public class EmptyVersionContext implements VersionContext
 {
-    void initRead();
+    public static final VersionContext INSTANCE = new EmptyVersionContext();
 
-    void initWrite( long committingTxId );
+    private EmptyVersionContext()
+    {
+    }
 
-    long committingTransactionId();
+    @Override
+    public void initRead()
+    {
+    }
 
-    long lastClosedTransactionId();
+    @Override
+    public void initWrite( long committingTransactionId )
+    {
 
-    void markAsDirty();
+    }
 
-    boolean isDirty();
+    @Override
+    public long committingTransactionId()
+    {
+        return 0;
+    }
 
-    void clearTransactionIds();
+    @Override
+    public long lastClosedTransactionId()
+    {
+        return Long.MAX_VALUE;
+    }
 
+    @Override
+    public void markAsDirty()
+    {
+
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return false;
+    }
+
+    @Override
+    public void clearTransactionIds()
+    {
+    }
 }

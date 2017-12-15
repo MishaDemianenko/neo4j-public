@@ -31,7 +31,7 @@ import org.neo4j.collection.pool.MarshlandPool;
 import org.neo4j.function.Factory;
 import org.neo4j.graphdb.DatabaseShutdownException;
 import org.neo4j.graphdb.TransactionFailureException;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.AvailabilityGuard;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.KernelTransactionHandle;
@@ -81,7 +81,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
     private final TransactionIdStore transactionIdStore;
     private final AccessCapability accessCapability;
     private final Supplier<LegacyIndexTransactionState> legacyIndexTxStateSupplier;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
     private final Clock clock;
     private final ReentrantReadWriteLock newTransactionsLock = new ReentrantReadWriteLock();
 
@@ -128,7 +128,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
                                Procedures procedures,
                                TransactionIdStore transactionIdStore,
                                Clock clock, AccessCapability accessCapability,
-                               CursorContextSupplier cursorContextSupplier )
+                               VersionContextSupplier versionContextSupplier )
     {
         this.statementLocksFactory = statementLocksFactory;
         this.constraintIndexCreator = constraintIndexCreator;
@@ -146,7 +146,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
         this.accessCapability = accessCapability;
         this.legacyIndexTxStateSupplier = () -> new CachingLegacyIndexTransactionState(
                 new LegacyIndexTransactionStateImpl( indexConfigStore, legacyIndexProviderLookup ) );
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.clock = clock;
         blockNewTransactions();
     }
@@ -341,7 +341,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
                             constraintIndexCreator, procedures, transactionHeaderInformationFactory,
                             transactionCommitProcess, transactionMonitor, legacyIndexTxStateSupplier, localTxPool,
                             clock, tracers.transactionTracer, tracers.lockTracer, tracers.pageCursorTracerSupplier,
-                            storageEngine, accessCapability, cursorContextSupplier );
+                            storageEngine, accessCapability, versionContextSupplier );
             this.transactions.add( tx );
             return tx;
         }

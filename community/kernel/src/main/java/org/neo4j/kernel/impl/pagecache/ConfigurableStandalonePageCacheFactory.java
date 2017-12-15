@@ -26,8 +26,8 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.cursor.DefaultPageCursorTracerSupplier;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.logging.FormattedLogProvider;
 
@@ -47,13 +47,13 @@ public final class ConfigurableStandalonePageCacheFactory
     public static PageCache createPageCache( FileSystemAbstraction fileSystem )
     {
         return createPageCache( fileSystem, PageCacheTracer.NULL, DefaultPageCursorTracerSupplier.INSTANCE,
-                Config.defaults(), EmptyCursorContextSupplier.INSTANCE );
+                Config.defaults(), EmptyVersionContextSupplier.INSTANCE );
     }
 
     public static PageCache createPageCache( FileSystemAbstraction fileSystem, Config config )
     {
         return createPageCache( fileSystem, PageCacheTracer.NULL, DefaultPageCursorTracerSupplier.INSTANCE, config,
-                EmptyCursorContextSupplier.INSTANCE );
+                EmptyVersionContextSupplier.INSTANCE );
     }
 
     /**
@@ -63,19 +63,19 @@ public final class ConfigurableStandalonePageCacheFactory
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracer that will provide
      * thread local page cache statistics
      * @param config page cache configuration
-     * @param cursorContextSupplier
+     * @param versionContextSupplier
      * @return created page cache instance
      */
     public static PageCache createPageCache( FileSystemAbstraction fileSystem, PageCacheTracer pageCacheTracer,
             PageCursorTracerSupplier pageCursorTracerSupplier, Config config,
-            CursorContextSupplier cursorContextSupplier )
+            VersionContextSupplier versionContextSupplier )
     {
         Config finalConfig = config.withDefaults( MapUtil.stringMap(
                 GraphDatabaseSettings.pagecache_memory.name(), "8M" ) );
         FormattedLogProvider logProvider = FormattedLogProvider.toOutputStream( System.err );
         ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
                 fileSystem, finalConfig, pageCacheTracer, pageCursorTracerSupplier,
-                logProvider.getLog( PageCache.class ), cursorContextSupplier );
+                logProvider.getLog( PageCache.class ), versionContextSupplier );
         return pageCacheFactory.getOrCreatePageCache();
     }
 }

@@ -17,26 +17,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.io.pagecache.tracing.cursor.context;
+package org.neo4j.kernel.impl.context;
 
 import java.util.function.LongSupplier;
 
-public class EmptyCursorContextSupplier implements CursorContextSupplier
-{
-    public static final CursorContextSupplier INSTANCE = new EmptyCursorContextSupplier();
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 
-    private EmptyCursorContextSupplier()
-    {
-    }
+/**
+ * {@link VersionContextSupplier} that supplier thread bound version context that should be used in a context of
+ * transaction(Committing or reading).
+ */
+public class TransactionVersionContextSupplier implements VersionContextSupplier
+{
+    protected ThreadLocal<VersionContext> cursorContext;
 
     @Override
     public void init( LongSupplier lastClosedTransactionIdSupplier )
     {
+        this.cursorContext = ThreadLocal.withInitial( () -> new TransactionVersionContext( lastClosedTransactionIdSupplier ) );
     }
 
     @Override
-    public CursorContext getCursorContext()
+    public VersionContext getVersionContext()
     {
-        return EmptyCursorContext.INSTANCE;
+        return cursorContext == null ? EmptyVersionContext.INSTANCE : cursorContext.get();
     }
+
 }

@@ -37,7 +37,7 @@ import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.mockfs.UncloseableDelegatingFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.store.CountsComputer;
 import org.neo4j.kernel.impl.store.MetaDataStore;
@@ -313,14 +313,14 @@ public class CountsComputerTest
     private CountsTracker createCountsTracker()
     {
         return new CountsTracker( NullLogProvider.getInstance(), fs, pageCache,
-                Config.empty(), new File( dir, COUNTS_STORE_BASE ), EmptyCursorContextSupplier.INSTANCE );
+                Config.empty(), new File( dir, COUNTS_STORE_BASE ), EmptyVersionContextSupplier.INSTANCE );
     }
 
     private void rebuildCounts( long lastCommittedTransactionId ) throws IOException
     {
         cleanupCountsForRebuilding();
 
-        StoreFactory storeFactory = new StoreFactory( dir, pageCache, fs, NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+        StoreFactory storeFactory = new StoreFactory( dir, pageCache, fs, NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
         try ( Lifespan life = new Lifespan();
               NeoStores neoStores = storeFactory.openAllNeoStores() )
         {

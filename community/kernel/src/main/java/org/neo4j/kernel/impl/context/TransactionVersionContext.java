@@ -21,18 +21,22 @@ package org.neo4j.kernel.impl.context;
 
 import java.util.function.LongSupplier;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
 
 import static org.neo4j.kernel.impl.transaction.log.TransactionIdStore.BASE_TX_ID;
 
-public class CursorTransactionContext implements CursorContext
+/**
+ * Transactional version context that used by read transaction to read data of specific version.
+ * Or perform versioned data modification.
+ */
+public class TransactionVersionContext implements VersionContext
 {
     private final LongSupplier lastClosedTxIdSupplier;
     private long transactionId = BASE_TX_ID;
     private long lastClosedTxId = Long.MAX_VALUE;
     private boolean dirty;
 
-    public CursorTransactionContext( LongSupplier lastClosedTxIdSupplier )
+    public TransactionVersionContext( LongSupplier lastClosedTxIdSupplier )
     {
         this.lastClosedTxIdSupplier = lastClosedTxIdSupplier;
     }

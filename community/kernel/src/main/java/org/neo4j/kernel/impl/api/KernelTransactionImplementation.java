@@ -35,8 +35,8 @@ import java.util.stream.Stream;
 import org.neo4j.collection.pool.Pool;
 import org.neo4j.graphdb.TransactionTerminatedException;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.KeyReadTokenNameLookup;
 import org.neo4j.kernel.api.exceptions.ConstraintViolationTransactionFailureException;
@@ -107,7 +107,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final TransactionCommitProcess commitProcess;
     private final TransactionMonitor transactionMonitor;
     private final PageCursorTracerSupplier cursorTracerSupplier;
-    private final CursorContextSupplier cursorContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
     private final StoreReadLayer storeLayer;
     private final Clock clock;
 
@@ -118,7 +118,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private TransactionWriteState writeState;
     private TransactionHooks.TransactionHooksState hooksState;
     private StatementOperationParts currentTransactionOperations;
-    private CursorContext cursorContext;
+    private VersionContext versionContext;
     private final KernelStatement currentStatement;
     private final StorageStatement storageStatement;
     private final List<CloseListener> closeListeners = new ArrayList<>( 2 );
@@ -166,7 +166,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
                                             PageCursorTracerSupplier cursorTracerSupplier,
                                             StorageEngine storageEngine,
                                             AccessCapability accessCapability,
-                                            CursorContextSupplier cursorContextSupplier )
+                                            VersionContextSupplier versionContextSupplier )
     {
         this.operationContainer = operationContainer;
         this.schemaWriteGuard = schemaWriteGuard;
@@ -182,7 +182,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.clock = clock;
         this.transactionTracer = transactionTracer;
         this.cursorTracerSupplier = cursorTracerSupplier;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
         this.storageStatement = storeLayer.newStatement();
         this.currentStatement =
                 new KernelStatement( this, this, storageStatement, procedures, accessCapability, lockTracer );
@@ -216,8 +216,9 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.transactionId = NOT_COMMITTED_TRANSACTION_ID;
         this.commitTime = NOT_COMMITTED_TRANSACTION_COMMIT_TIME;
         this.currentTransactionOperations = timeoutMillis > 0 ? operationContainer.guardedParts() : operationContainer.nonGuarderParts();
-        this.cursorContext = this.cursorContextSupplier.getCursorContext();
-        this.currentStatement.initialize( statementLocks, currentTransactionOperations, cursorTracerSupplier.get(), cursorContext );
+        this.versionContext = this.versionContextSupplier.getVersionContext();
+        this.currentStatement.initialize( statementLocks, currentTransactionOperations, cursorTracerSupplier.get(),
+                versionContext );
         return this;
     }
 
@@ -592,7 +593,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
 
                     // Commit the transaction
                     success = true;
-                    TransactionToApply batch = new TransactionToApply( transactionRepresentation, cursorContext );
+                    TransactionToApply batch = new TransactionToApply( transactionRepresentation, versionContext );
                     txId = transactionId = commitProcess.commit( batch, commitEvent, INTERNAL );
                     commitTime = timeCommitted;
                 }

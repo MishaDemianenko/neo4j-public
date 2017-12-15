@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.neo4j.helpers.collection.Pair;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 
 abstract class DeadState<Key> extends ProgressiveState<Key>
 {
@@ -100,20 +100,20 @@ abstract class DeadState<Key> extends ProgressiveState<Key>
 
     private final KeyFormat<Key> keys;
     final ActiveState.Factory stateFactory;
-    final CursorContextSupplier cursorContextSupplier;
+    final VersionContextSupplier versionContextSupplier;
 
-    private DeadState( KeyFormat<Key> keys, ActiveState.Factory stateFactory, CursorContextSupplier cursorContextSupplier )
+    private DeadState( KeyFormat<Key> keys, ActiveState.Factory stateFactory, VersionContextSupplier versionContextSupplier )
     {
         this.keys = keys;
         this.stateFactory = stateFactory;
-        this.cursorContextSupplier = cursorContextSupplier;
+        this.versionContextSupplier = versionContextSupplier;
     }
 
     static class Stopped<Key> extends DeadState<Key>
     {
-        Stopped( KeyFormat<Key> keys, ActiveState.Factory stateFactory, CursorContextSupplier cursorContextSupplier )
+        Stopped( KeyFormat<Key> keys, ActiveState.Factory stateFactory, VersionContextSupplier versionContextSupplier )
         {
-            super( keys, stateFactory, cursorContextSupplier );
+            super( keys, stateFactory, versionContextSupplier );
         }
 
         @Override
@@ -128,10 +128,10 @@ abstract class DeadState<Key> extends ProgressiveState<Key>
             Pair<File, KeyValueStoreFile> opened = rotation.open();
             if ( opened == null )
             {
-                return new NeedsCreation<>( keyFormat(), stateFactory, rotation, cursorContextSupplier );
+                return new NeedsCreation<>( keyFormat(), stateFactory, rotation, versionContextSupplier );
             }
             return new Prepared<>( stateFactory.open( ReadableState.store( keyFormat(), opened.other() ),
-                                                      opened.first(), cursorContextSupplier ) );
+                                                      opened.first(), versionContextSupplier ) );
         }
 
         @Override
@@ -147,16 +147,16 @@ abstract class DeadState<Key> extends ProgressiveState<Key>
         private final RotationStrategy rotation;
 
         private NeedsCreation( KeyFormat<Key> keys, ActiveState.Factory stateFactory, RotationStrategy rotation,
-                CursorContextSupplier cursorContextSupplier )
+                VersionContextSupplier versionContextSupplier )
         {
-            super( keys, stateFactory, cursorContextSupplier );
+            super( keys, stateFactory, versionContextSupplier );
             this.rotation = rotation;
         }
 
         @Override
         ProgressiveState<Key> stop() throws IOException
         {
-            return new Stopped<>( keyFormat(), stateFactory, cursorContextSupplier );
+            return new Stopped<>( keyFormat(), stateFactory, versionContextSupplier );
         }
 
         @Override
@@ -173,14 +173,16 @@ abstract class DeadState<Key> extends ProgressiveState<Key>
                 throw new IllegalStateException( "Store needs to be created, and no initializer is given." );
             }
             Pair<File, KeyValueStoreFile> created = initialState( initializer );
-            return stateFactory.open( ReadableState.store( keyFormat(), created.other() ), created.first(), cursorContextSupplier );
+            return stateFactory.open( ReadableState.store( keyFormat(), created.other() ), created.first(),
+                    versionContextSupplier );
         }
 
         private Pair<File, KeyValueStoreFile> initialState( DataInitializer<EntryUpdater<Key>> initializer )
                 throws IOException
         {
             long version = initializer.initialVersion();
-            ActiveState<Key> creation = stateFactory.open( ReadableState.empty( keyFormat(), version ), null, cursorContextSupplier );
+            ActiveState<Key> creation = stateFactory.open( ReadableState.empty( keyFormat(), version ), null,
+                    versionContextSupplier );
             try
             {
                 try ( EntryUpdater<Key> updater = creation.resetter( new ReentrantLock(), new Runnable()
@@ -254,7 +256,7 @@ abstract class DeadState<Key> extends ProgressiveState<Key>
 
         private Prepared( ActiveState<Key> state )
         {
-            super( state.keyFormat(), state.factory(), state.cursorContextSupplier );
+            super( state.keyFormat(), state.factory(), state.versionContextSupplier );
             this.state = state;
         }
 

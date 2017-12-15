@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.concurrent.locks.Lock;
 
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -151,6 +151,6 @@ public class ConcurrentMapStateTest
 
     private ConcurrentMapState<?> createMapState()
     {
-        return new ConcurrentMapState<>( store, file, EmptyCursorContextSupplier.INSTANCE );
+        return new ConcurrentMapState<>( store, file, EmptyVersionContextSupplier.INSTANCE );
     }
 }

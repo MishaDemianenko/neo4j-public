@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.neo4j.graphdb.TransactionFailureException;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionRepresentationCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionToApply;
@@ -58,7 +58,7 @@ public class ReplicatedTokenStateMachineTest
         // given
         TokenRegistry<Token> registry = new TokenRegistry<>( "Label" );
         ReplicatedTokenStateMachine<Token> stateMachine = new ReplicatedTokenStateMachine<>( registry,
-                new Token.Factory(), NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+                new Token.Factory(), NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
         stateMachine.installCommitProcess( mock( TransactionCommitProcess.class ), -1 );
 
         // when
@@ -75,7 +75,7 @@ public class ReplicatedTokenStateMachineTest
         // given
         TokenRegistry<Token> registry = new TokenRegistry<>( "Label" );
         ReplicatedTokenStateMachine<Token> stateMachine = new ReplicatedTokenStateMachine<>( registry,
-                new Token.Factory(), NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+                new Token.Factory(), NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
 
         stateMachine.installCommitProcess( mock( TransactionCommitProcess.class ), -1 );
 
@@ -101,7 +101,7 @@ public class ReplicatedTokenStateMachineTest
         StubTransactionCommitProcess commitProcess = new StubTransactionCommitProcess( null, null );
         ReplicatedTokenStateMachine<Token> stateMachine = new ReplicatedTokenStateMachine<>(
                 new TokenRegistry<>( "Token" ), new Token.Factory(),
-                NullLogProvider.getInstance(), EmptyCursorContextSupplier.INSTANCE );
+                NullLogProvider.getInstance(), EmptyVersionContextSupplier.INSTANCE );
         stateMachine.installCommitProcess( commitProcess, -1 );
 
         // when

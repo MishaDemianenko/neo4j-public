@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.CountsAccessor;
 import org.neo4j.kernel.impl.api.CountsVisitor;
@@ -85,16 +85,16 @@ public class CountsTracker extends AbstractKeyValueStore<CountsKey>
     public static final String TYPE_DESCRIPTOR = "CountsStore";
 
     public CountsTracker( final LogProvider logProvider, FileSystemAbstraction fs, PageCache pages, Config config,
-            File baseFile, CursorContextSupplier cursorContextSupplier )
+            File baseFile, VersionContextSupplier versionContextSupplier )
     {
-        this( logProvider, fs, pages, config, baseFile, Clocks.systemClock(), cursorContextSupplier );
+        this( logProvider, fs, pages, config, baseFile, Clocks.systemClock(), versionContextSupplier );
     }
 
     public CountsTracker( final LogProvider logProvider, FileSystemAbstraction fs, PageCache pages, Config config,
-            File baseFile, Clock clock, CursorContextSupplier cursorContextSupplier )
+            File baseFile, Clock clock, VersionContextSupplier versionContextSupplier )
     {
         super( fs, pages, baseFile, new CountsTrackerRotationMonitor( logProvider ), new RotationTimerFactory( clock,
-                config.get( counts_store_rotation_timeout ).toMillis() ), cursorContextSupplier,16, 16, HEADER_FIELDS );
+                config.get( counts_store_rotation_timeout ).toMillis() ), versionContextSupplier,16, 16, HEADER_FIELDS );
     }
 
     public CountsTracker setInitializer( final DataInitializer<Updater> initializer )

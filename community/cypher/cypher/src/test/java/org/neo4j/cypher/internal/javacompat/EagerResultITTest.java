@@ -46,13 +46,13 @@ import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.graphdb.factory.GraphDatabaseFactoryState;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.helpers.collection.Iterables;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.kernel.GraphDatabaseDependencies;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.configuration.Settings;
-import org.neo4j.kernel.impl.context.CursorTransactionContext;
-import org.neo4j.kernel.impl.context.CursorTransactionContextSupplier;
+import org.neo4j.kernel.impl.context.TransactionVersionContext;
+import org.neo4j.kernel.impl.context.TransactionVersionContextSupplier;
 import org.neo4j.kernel.impl.factory.CommunityEditionModule;
 import org.neo4j.kernel.impl.factory.DatabaseInfo;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
@@ -75,19 +75,19 @@ public class EagerResultITTest
     @Rule
     public final TestDirectory testDirectory = TestDirectory.testDirectory();
     private GraphDatabaseService database;
-    private TestCursorTransactionContextSupplier testContextSupplier;
+    private TestTransactionVersionContextSupplier testContextSupplier;
     private File storeDir;
-    private TestCursorContext testCursorContext;
+    private TestVersionContext testCursorContext;
 
     @Before
     public void setUp()
     {
         storeDir = testDirectory.directory();
-        testContextSupplier = new TestCursorTransactionContextSupplier();
+        testContextSupplier = new TestTransactionVersionContextSupplier();
         database = startRestartableDatabase();
         prepareData();
         TransactionIdStore transactionIdStore = getTransactionIdStore();
-        testCursorContext = new TestCursorContext( transactionIdStore::getLastClosedTransactionId );
+        testCursorContext = new TestVersionContext( transactionIdStore::getLastClosedTransactionId );
         testContextSupplier.setCursorContext( testCursorContext );
     }
 
@@ -291,7 +291,7 @@ public class EagerResultITTest
             return new PlatformModule( storeDir, config, databaseInfo, dependencies, graphDatabaseFacade )
             {
                 @Override
-                protected CursorContextSupplier createCursorContextSupplier( Config config )
+                protected VersionContextSupplier createCursorContextSupplier( Config config )
                 {
                     return testContextSupplier != null ? testContextSupplier : super.createCursorContextSupplier(config);
                 }
@@ -299,13 +299,13 @@ public class EagerResultITTest
         }
     }
 
-    private class TestCursorContext extends CursorTransactionContext
+    private class TestVersionContext extends TransactionVersionContext
     {
 
         private boolean useCorrectLastCommittedTxId = false;
         private int additionalAttempts;
 
-        TestCursorContext( LongSupplier transactionIdSupplier )
+        TestVersionContext( LongSupplier transactionIdSupplier )
         {
             super( transactionIdSupplier );
         }
@@ -336,11 +336,11 @@ public class EagerResultITTest
         }
     }
 
-    private class TestCursorTransactionContextSupplier extends CursorTransactionContextSupplier
+    private class TestTransactionVersionContextSupplier extends TransactionVersionContextSupplier
     {
-        void setCursorContext( CursorContext cursorContext )
+        void setCursorContext( VersionContext versionContext )
         {
-            this.cursorContext.set( cursorContext );
+            this.cursorContext.set( versionContext );
         }
     }
 }

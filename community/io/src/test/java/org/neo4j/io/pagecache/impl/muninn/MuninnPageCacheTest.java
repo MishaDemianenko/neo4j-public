@@ -43,8 +43,8 @@ import org.neo4j.io.pagecache.tracing.MajorFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.cursor.DefaultPageCursorTracerSupplier;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContext;
-import org.neo4j.io.pagecache.tracing.cursor.context.CursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContext;
+import org.neo4j.io.pagecache.tracing.cursor.context.VersionContextSupplier;
 import org.neo4j.io.pagecache.tracing.recording.RecordingPageCacheTracer;
 import org.neo4j.io.pagecache.tracing.recording.RecordingPageCursorTracer;
 import org.neo4j.io.pagecache.tracing.recording.RecordingPageCursorTracer.Fault;
@@ -239,10 +239,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void trackPageModificationTransactionId() throws Exception
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 0 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 0 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 7 );
@@ -263,10 +263,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void pareModificationTrackingNoticeWriteFromAnotherThread() throws Exception
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 0 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 0 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 7 );
@@ -296,10 +296,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void pageModificationTracksHighestModifierTransactionId() throws IOException
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 0 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 0 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 1 );
@@ -332,10 +332,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void markCursorContextAsDirtyWhenReadingDataFromMoreRecentTransactions() throws IOException
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 3 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 3 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 7 );
@@ -358,10 +358,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void doNotMarkCursorContextAsDirtyWhenReadingDataFromOlderTransactions() throws IOException
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 23 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 23 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 17 );
@@ -384,10 +384,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void markContextAsDirtyWhenAnyEvictedPageHaveModificationTransactionHigherThenReader() throws IOException
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 5 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 5 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 3 );
@@ -417,10 +417,10 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
     @Test
     public void doNotMarkContextAsDirtyWhenAnyEvictedPageHaveModificationTransactionLowerThenReader() throws IOException
     {
-        TestCursorContext cursorContext = new TestCursorContext( () -> 15 );
-        CursorContextSupplier cursorContextSupplier = new ConfiguredCursorContextSupplier( cursorContext );
+        TestVersionContext cursorContext = new TestVersionContext( () -> 15 );
+        VersionContextSupplier versionContextSupplier = new ConfiguredVersionContextSupplier( cursorContext );
         MuninnPageCache pageCache =
-                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, cursorContextSupplier );
+                createPageCache( fs, 2, 8, PageCacheTracer.NULL, PageCursorTracerSupplier.NULL, versionContextSupplier );
 
         PagedFile pagedFile = pageCache.map( file( "a" ), 8 );
         cursorContext.initWrite( 3 );
@@ -566,14 +566,14 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
         }
     }
 
-    private static class ConfiguredCursorContextSupplier implements CursorContextSupplier
+    private static class ConfiguredVersionContextSupplier implements VersionContextSupplier
     {
 
-        private final CursorContext cursorContext;
+        private final VersionContext versionContext;
 
-        ConfiguredCursorContextSupplier( CursorContext cursorContext )
+        ConfiguredVersionContextSupplier( VersionContext versionContext )
         {
-            this.cursorContext = cursorContext;
+            this.versionContext = versionContext;
         }
 
         @Override
@@ -582,13 +582,13 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
         }
 
         @Override
-        public CursorContext getCursorContext()
+        public VersionContext getVersionContext()
         {
-            return cursorContext;
+            return versionContext;
         }
     }
 
-    private static class TestCursorContext implements CursorContext
+    private static class TestVersionContext implements VersionContext
     {
 
         private final IntSupplier closedTxIdSupplier;
@@ -596,7 +596,7 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
         private long lastClosedTxId;
         private boolean dirty;
 
-        TestCursorContext(IntSupplier closedTxIdSupplier)
+        TestVersionContext(IntSupplier closedTxIdSupplier)
         {
             this.closedTxIdSupplier = closedTxIdSupplier;
         }

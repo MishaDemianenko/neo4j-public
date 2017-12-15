@@ -27,7 +27,7 @@ import org.neo4j.io.pagecache.PageSwapperFactory;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.cursor.DefaultPageCursorTracerSupplier;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.pagecache.ConfiguringPageCacheFactory;
 import org.neo4j.logging.FormattedLogProvider;
@@ -57,7 +57,7 @@ public class ConfigurablePageCacheRule extends PageCacheRule
         FormattedLogProvider logProvider = FormattedLogProvider.toOutputStream( System.err );
         ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
                 fs, finalConfig, tracer, cursorTracerSupplier, logProvider.getLog( PageCache.class ),
-                EmptyCursorContextSupplier.INSTANCE )
+                EmptyVersionContextSupplier.INSTANCE )
         {
             @Override
             public int calculatePageSize( Config config, PageSwapperFactory swapperFactory )

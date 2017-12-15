@@ -41,7 +41,7 @@ import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.tracing.cursor.context.EmptyCursorContextSupplier;
+import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
 import org.neo4j.kernel.api.ReadOperations;
 import org.neo4j.kernel.api.direct.DirectStoreAccess;
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
@@ -165,7 +165,7 @@ public abstract class GraphStoreFixture extends ConfigurablePageCacheRule implem
             fileSystem = new DefaultFileSystemAbstraction();
             PageCache pageCache = getPageCache( fileSystem );
             LogProvider logProvider = NullLogProvider.getInstance();
-            StoreFactory storeFactory = new StoreFactory( directory, pageCache, fileSystem, logProvider, EmptyCursorContextSupplier.INSTANCE );
+            StoreFactory storeFactory = new StoreFactory( directory, pageCache, fileSystem, logProvider, EmptyVersionContextSupplier.INSTANCE );
             neoStore = storeFactory.openAllNeoStores();
             StoreAccess nativeStores;
             if ( keepStatistics )

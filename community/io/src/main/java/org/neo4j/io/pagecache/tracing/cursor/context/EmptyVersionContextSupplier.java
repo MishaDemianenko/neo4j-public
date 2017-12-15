@@ -19,51 +19,28 @@
  */
 package org.neo4j.io.pagecache.tracing.cursor.context;
 
-public class EmptyCursorContext implements CursorContext
+import java.util.function.LongSupplier;
+
+/**
+ * {@link VersionContextSupplier} version that supply same {@link EmptyVersionContext} each time for cases
+ * where version context mechanics is not required
+ */
+public class EmptyVersionContextSupplier implements VersionContextSupplier
 {
-    public static final CursorContext INSTANCE = new EmptyCursorContext();
+    public static final VersionContextSupplier INSTANCE = new EmptyVersionContextSupplier();
 
-    private EmptyCursorContext()
+    private EmptyVersionContextSupplier()
     {
     }
 
     @Override
-    public void initRead()
+    public void init( LongSupplier lastClosedTransactionIdSupplier )
     {
     }
 
     @Override
-    public void initWrite( long committingTransactionId )
+    public VersionContext getVersionContext()
     {
-
-    }
-
-    @Override
-    public long committingTransactionId()
-    {
-        return 0;
-    }
-
-    @Override
-    public long lastClosedTransactionId()
-    {
-        return Long.MAX_VALUE;
-    }
-
-    @Override
-    public void markAsDirty()
-    {
-
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return false;
-    }
-
-    @Override
-    public void clearTransactionIds()
-    {
+        return EmptyVersionContext.INSTANCE;
     }
 }
