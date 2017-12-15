@@ -67,7 +67,7 @@ public class EmptyVersionContext implements VersionContext
     }
 
     @Override
-    public void clearTransactionIds()
+    public void clear()
     {
     }
 }

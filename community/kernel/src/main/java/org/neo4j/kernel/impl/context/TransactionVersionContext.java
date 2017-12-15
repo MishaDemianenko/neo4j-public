@@ -82,7 +82,7 @@ public class TransactionVersionContext implements VersionContext
     }
 
     @Override
-    public void clearTransactionIds()
+    public void clear()
     {
         transactionId = BASE_TX_ID;
         lastClosedTxId = Long.MAX_VALUE;

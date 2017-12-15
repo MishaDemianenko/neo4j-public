@@ -203,9 +203,9 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
         KernelTransactions kernelTransactions();
 
         /**
-         * Cursor context supplier to connect applied transaction with cursors
+         * Version context supplier
          */
-        VersionContextSupplier cursorContext();
+        VersionContextSupplier versionContextSupplier();
     }
 
     /**
@@ -261,7 +261,7 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
         }
 
         @Override
-        public VersionContextSupplier cursorContext()
+        public VersionContextSupplier versionContextSupplier()
         {
             return resolver.resolveDependency( VersionContextSupplier.class );
         }
@@ -321,7 +321,7 @@ public class TransactionCommittingResponseUnpacker extends LifecycleAdapter impl
     {
         this.obligationFulfiller = dependencies.obligationFulfiller();
         this.log = dependencies.logService().getInternalLog( BatchingResponseHandler.class );
-        this.versionContextSupplier = dependencies.cursorContext();
+        this.versionContextSupplier = dependencies.versionContextSupplier();
         this.batchCommitter = new TransactionBatchCommitter( dependencies.kernelTransactions(), idReuseSafeZoneTime,
                 dependencies.commitProcess(), log );
         this.stopped = false;

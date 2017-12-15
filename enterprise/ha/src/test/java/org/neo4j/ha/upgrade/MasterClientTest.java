@@ -131,7 +131,7 @@ public class MasterClientTest
         TransactionCommitProcess commitProcess = mock( TransactionCommitProcess.class );
         when( deps.commitProcess() ).thenReturn( commitProcess );
         when( deps.logService() ).thenReturn( NullLogService.getInstance() );
-        when( deps.cursorContext() ).thenReturn( EmptyVersionContextSupplier.INSTANCE );
+        when( deps.versionContextSupplier() ).thenReturn( EmptyVersionContextSupplier.INSTANCE );
         when( deps.kernelTransactions() ).thenReturn( mock( KernelTransactions.class ) );
 
         ResponseUnpacker unpacker = life.add(

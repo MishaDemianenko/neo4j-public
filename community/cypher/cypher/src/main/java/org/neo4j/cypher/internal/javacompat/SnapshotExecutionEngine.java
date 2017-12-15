@@ -32,6 +32,12 @@ import org.neo4j.kernel.impl.query.QueryExecutionKernelException;
 import org.neo4j.kernel.impl.query.TransactionalContext;
 import org.neo4j.logging.LogProvider;
 
+/**
+ * {@link ExecutionEngine} engine that will try to run cypher query with guarantee that query will never see any data
+ * that coming from transaction that are newer then transaction that was the last closed on a moment when
+ * {@link VersionContext} was initialised. Observed behaviour is the same as executing query on top data snapshot for
+ * that version.
+ */
 public class SnapshotExecutionEngine extends ExecutionEngine
 {
     private final int maxQueryExecutionAttempts;
@@ -68,8 +74,8 @@ public class SnapshotExecutionEngine extends ExecutionEngine
         {
             if ( attempt == maxQueryExecutionAttempts )
             {
-                throw new QueryExecutionKernelException( new UnstableSnapshotException(
-                        "Unable to get clean data snapshot for query '%s' after %d attempts.", query, attempt ) );
+                return throwQueryExecutionException(
+                        "Unable to get clean data snapshot for query '%s' after %d attempts.", query, attempt );
             }
             attempt++;
             versionContext.initRead();
@@ -79,12 +85,18 @@ public class SnapshotExecutionEngine extends ExecutionEngine
             dirtySnapshot = versionContext.isDirty();
             if ( dirtySnapshot && result.getQueryStatistics().containsUpdates() )
             {
-                throw new QueryExecutionKernelException( new UnstableSnapshotException(
-                        "Unable to get clean data snapshot for query '%s' that perform updates.", query ) );
+                return throwQueryExecutionException(
+                        "Unable to get clean data snapshot for query '%s' that perform updates.", query, attempt );
             }
         }
         while ( dirtySnapshot );
         return eagerResult;
+    }
+
+    private Result throwQueryExecutionException( String message, Object... parameters ) throws
+            QueryExecutionKernelException
+    {
+        throw new QueryExecutionKernelException( new UnstableSnapshotException( message, parameters ) );
     }
 
     private static VersionContext getCursorContext( TransactionalContext context )

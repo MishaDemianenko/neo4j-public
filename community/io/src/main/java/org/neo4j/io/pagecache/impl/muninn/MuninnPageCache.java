@@ -206,7 +206,9 @@ public class MuninnPageCache implements PageCache
      * @param cachePageSize page cache size
      * @param pageCacheTracer global page cache tracer
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracer that will provide
-     * @param versionContextSupplier TODO
+     * thread local page cache statistics
+     * @param versionContextSupplier supplier of thread local (transaction local) version context that will provide
+     * access to thread local version context
      */
     public MuninnPageCache( PageSwapperFactory swapperFactory, int maxPages, int cachePageSize, PageCacheTracer pageCacheTracer,
             PageCursorTracerSupplier pageCursorTracerSupplier, VersionContextSupplier versionContextSupplier )

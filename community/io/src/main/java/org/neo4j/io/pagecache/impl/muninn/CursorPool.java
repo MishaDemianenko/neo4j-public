@@ -38,7 +38,7 @@ final class CursorPool extends ThreadLocal<CursorPool.CursorSets>
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracers that will
      * provide thread local page cache statistics
      * @param pageCacheTracer global page cache tracer
-     * @param versionContextSupplier
+     * @param versionContextSupplier version context supplier
      */
     CursorPool( MuninnPagedFile pagedFile, PageCursorTracerSupplier pageCursorTracerSupplier,
             PageCacheTracer pageCacheTracer, VersionContextSupplier versionContextSupplier )

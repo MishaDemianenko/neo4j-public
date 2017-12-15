@@ -276,7 +276,7 @@ public class KernelStatement implements TxStateHolder, Statement, AssertOpen
     {
         // closing is done by KTI
         storeStatement.release();
-        versionContext.clearTransactionIds();
+        versionContext.clear();
         executingQueryList = ExecutingQueryList.EMPTY;
     }
 

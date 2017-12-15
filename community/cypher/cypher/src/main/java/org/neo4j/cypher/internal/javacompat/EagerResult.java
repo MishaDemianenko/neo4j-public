@@ -31,11 +31,16 @@ import org.neo4j.graphdb.QueryStatistics;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Result;
 
+import static java.lang.System.lineSeparator;
+
+/**
+ * Result produced as result of eager query execution for cases when {@link SnapshotExecutionEngine} is used.
+ */
 class EagerResult implements Result
 {
     private static final String ITEM_SEPARATOR = ", ";
     private final Result originalResult;
-    private List<Map<String, Object>> queryResult = new ArrayList<>();
+    private final List<Map<String, Object>> queryResult = new ArrayList<>();
     private int cursor;
 
     EagerResult( Result result )
@@ -84,7 +89,7 @@ class EagerResult implements Result
     @Override
     public void close()
     {
-
+        // nothing to close. Original result is already closed at this point
     }
 
     @Override
@@ -107,12 +112,12 @@ class EagerResult implements Result
         builder.append( String.join( ITEM_SEPARATOR, columns ) );
         if ( !queryResult.isEmpty() )
         {
-            builder.append( System.lineSeparator() );
+            builder.append( lineSeparator() );
             int numberOfColumns = columns.size();
             for ( Map<String,Object> row : queryResult )
             {
                 writeRow( columns, builder, numberOfColumns, row );
-                builder.append( System.lineSeparator() );
+                builder.append( lineSeparator() );
             }
         }
         return builder.toString();
@@ -160,7 +165,6 @@ class EagerResult implements Result
 
     private class EagerResultResourceIterator<T> implements ResourceIterator<T>
     {
-
         private final String column;
         int cursor;
 

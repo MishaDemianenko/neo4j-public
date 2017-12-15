@@ -454,7 +454,7 @@ public class GraphDatabaseSettings implements LoadableConfig
     @Internal
     public static final Setting<Boolean> snapshot_query = setting( "unsupported.dbms.query.snapshot", BOOLEAN, FALSE );
 
-    @Description( "Specifies number or retries that query engine will do to be able to execute query based on " +
+    @Description( "Specifies number or retries that query engine will do to execute query based on " +
             "stable accessed data snapshot before giving up." )
     @Internal
     public static final Setting<Integer> snapshot_query_retries = setting( "unsupported.dbms.query.snapshot.retries",

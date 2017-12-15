@@ -71,7 +71,6 @@ import static org.junit.Assert.assertTrue;
 
 public class EagerResultITTest
 {
-
     @Rule
     public final TestDirectory testDirectory = TestDirectory.testDirectory();
     private GraphDatabaseService database;

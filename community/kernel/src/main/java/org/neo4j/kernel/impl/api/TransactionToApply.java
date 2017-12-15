@@ -166,7 +166,7 @@ public class TransactionToApply implements CommandsToApply, AutoCloseable
     @Override
     public void close()
     {
-        versionContext.clearTransactionIds();
+        versionContext.clear();
         if ( closedCallback != null )
         {
             closedCallback.accept( transactionId );

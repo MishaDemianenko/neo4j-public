@@ -67,6 +67,6 @@ public interface VersionContext
     /**
      * Clear transaction ids that read/write context was initialised with
      */
-    void clearTransactionIds();
+    void clear();
 
 }

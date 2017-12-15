@@ -638,7 +638,7 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache>
         }
 
         @Override
-        public void clearTransactionIds()
+        public void clear()
         {
 
         }

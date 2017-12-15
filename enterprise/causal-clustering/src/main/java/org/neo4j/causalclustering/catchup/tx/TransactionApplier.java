@@ -48,7 +48,7 @@ import static org.neo4j.storageengine.api.TransactionApplicationMode.EXTERNAL;
 public class TransactionApplier
 {
     private final TransactionRepresentationCommitProcess commitProcess;
-    private VersionContextSupplier versionContextSupplier;
+    private final VersionContextSupplier versionContextSupplier;
 
     public TransactionApplier( DependencyResolver resolver )
     {

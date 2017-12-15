@@ -47,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.neo4j.causalclustering.discovery.Cluster.dataMatchesEventually;
 import static org.neo4j.kernel.configuration.Settings.TRUE;
 
-public class PageVersionTrackingIT
+public class VersionContextTrackingIT
 {
     @Rule
     public final ClusterRule clusterRule = new ClusterRule( getClass() );

@@ -63,7 +63,7 @@ public final class ConfigurableStandalonePageCacheFactory
      * @param pageCursorTracerSupplier supplier of thread local (transaction local) page cursor tracer that will provide
      * thread local page cache statistics
      * @param config page cache configuration
-     * @param versionContextSupplier
+     * @param versionContextSupplier version context supplier
      * @return created page cache instance
      */
     public static PageCache createPageCache( FileSystemAbstraction fileSystem, PageCacheTracer pageCacheTracer,
