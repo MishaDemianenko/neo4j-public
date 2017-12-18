@@ -39,3 +39,5 @@ mkdir -p "${TARGET}"
 cd "${SOURCE}"
 find . -mindepth 1 -type d -printf '\033[0;32mCreating directory %p\n\033[0m' -exec mkdir -p "$TARGET/{}" \;
 find . -type f -printf '\033[0;32mCopying file %p\n\033[0m' -exec dd if={} of="$TARGET/{}" bs=8M status=progress oflag=direct \;
+
+echo "*****Store copy at ${TARGET} created*****"
