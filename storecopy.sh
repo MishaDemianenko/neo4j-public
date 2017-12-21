@@ -32,7 +32,7 @@ preallocate_file() {
         NEW_SIZE=$((CURRENT_SIZE + ADDITIONAL_SIZE))
         dd if=/dev/zero of="${2}" bs=1024 count=$(((NEW_SIZE+512)/1024)) status=none
    fi
-   dd if="${1}" of="${2}" bs=8M status=progress conv=notrunc oflag=direct
+   dd if="${1}" of="${2}" bs=8M status=none conv=notrunc oflag=direct
    tput sgr0
 }
 
