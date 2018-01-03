@@ -98,7 +98,7 @@ public class StateHandlingStatementOperationsTest
     {
         KernelStatement state = mockedState();
 
-        when( state.txState() ).thenReturn( new TxState() );
+        when( state.txState() ).thenReturn( new TxState( new OnHeapContainerFactory() ) );
         StoreStatement storeStatement = mock( StoreStatement.class );
         when( state.getStoreStatement() ).thenReturn( storeStatement );
         when( inner.indexesGetForLabel( 0 ) ).thenReturn( iterator( IndexDescriptorFactory.forLabel( 0, 0 ) ) );
@@ -144,7 +144,7 @@ public class StateHandlingStatementOperationsTest
     {
         // given
         ConstraintDescriptor constraint = ConstraintDescriptorFactory.uniqueForSchema( descriptor );
-        TransactionState txState = new TxState();
+        TransactionState txState = new TxState( new OnHeapContainerFactory() );
         KernelStatement state = mockedState( txState );
         when( inner.constraintsGetForSchema( constraint.schema() ) )
                 .thenAnswer( invocation -> emptyIterator() );
@@ -166,7 +166,7 @@ public class StateHandlingStatementOperationsTest
         UniquenessConstraintDescriptor constraint1 = ConstraintDescriptorFactory.uniqueForLabel( 2, 3 );
         UniquenessConstraintDescriptor constraint2 = ConstraintDescriptorFactory.uniqueForLabel( 4, 5 );
 
-        TransactionState txState = new TxState();
+        TransactionState txState = new TxState( new OnHeapContainerFactory() );
         KernelStatement state = mockedState( txState );
         when( inner.constraintsGetForSchema( constraint1.schema() ) )
                 .thenAnswer( invocation -> emptyIterator() );
@@ -194,7 +194,7 @@ public class StateHandlingStatementOperationsTest
         UniquenessConstraintDescriptor constraint1 = ConstraintDescriptorFactory.uniqueForLabel( 2, 3 );
         UniquenessConstraintDescriptor constraint2 = ConstraintDescriptorFactory.uniqueForLabel( 4, 5 );
 
-        TransactionState txState = new TxState();
+        TransactionState txState = new TxState( new OnHeapContainerFactory() );
         KernelStatement state = mockedState( txState );
         when( inner.constraintsGetForSchema( constraint1.schema() ) )
                 .thenAnswer( invocation -> emptyIterator() );

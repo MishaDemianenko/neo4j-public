@@ -39,6 +39,7 @@ import org.neo4j.kernel.api.explicitindex.AutoIndexing;
 import org.neo4j.kernel.api.txstate.ExplicitIndexTransactionState;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.api.state.ExplicitIndexTransactionStateImpl;
+import org.neo4j.kernel.impl.api.state.StateContainerFactory;
 import org.neo4j.kernel.impl.factory.AccessCapability;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
 import org.neo4j.kernel.impl.index.IndexConfigStore;
@@ -95,6 +96,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
     private final Cursors cursors;
     private final AutoIndexing autoIndexing;
     private final ExplicitIndexStore explicitIndexStore;
+    private final StateContainerFactory stateContainerFactory;
 
     /**
      * Used to enumerate all transactions in the system, active and idle ones.
@@ -134,7 +136,8 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
             SystemNanoClock clock,
             CpuClock cpuClock, HeapAllocation heapAllocation, AccessCapability accessCapability, Cursors cursors,
             AutoIndexing autoIndexing,
-            ExplicitIndexStore explicitIndexStore )
+            ExplicitIndexStore explicitIndexStore,
+            StateContainerFactory stateContainerFactory )
     {
         this.statementLocksFactory = statementLocksFactory;
         this.constraintIndexCreator = constraintIndexCreator;
@@ -160,6 +163,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
         this.clock = clock;
         blockNewTransactions();
         this.cursors = cursors;
+        this.stateContainerFactory = stateContainerFactory;
     }
 
     public Supplier<ExplicitIndexTransactionState> explicitIndexTxStateSupplier()
@@ -346,7 +350,8 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
                             constraintIndexCreator, procedures, transactionHeaderInformationFactory,
                             transactionCommitProcess, transactionMonitor, explicitIndexTxStateSupplier, localTxPool,
                             clock, cpuClock, heapAllocation, tracers.transactionTracer, tracers.lockTracer,
-                            tracers.pageCursorTracerSupplier, storageEngine, accessCapability, cursors, autoIndexing, explicitIndexStore );
+                            tracers.pageCursorTracerSupplier, storageEngine, accessCapability, cursors, autoIndexing,
+                            explicitIndexStore, stateContainerFactory );
             this.transactions.add( tx );
             return tx;
         }

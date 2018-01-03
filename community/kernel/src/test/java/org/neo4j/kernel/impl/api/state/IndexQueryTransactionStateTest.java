@@ -85,7 +85,7 @@ public class IndexQueryTransactionStateTest
     @Before
     public void before() throws Exception
     {
-        TransactionState txState = new TxState();
+        TransactionState txState = new TxState( new OnHeapContainerFactory() );
         state = StatementOperationsTestHelper.mockedState( txState );
 
         store = mock( StoreReadLayer.class );

@@ -31,6 +31,7 @@ import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationExcep
 import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.exceptions.schema.CreateConstraintFailureException;
 import org.neo4j.kernel.api.txstate.TransactionState;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.core.NonUniqueTokenException;
 import org.neo4j.kernel.impl.core.TokenHolder;
@@ -113,7 +114,7 @@ abstract class ReplicatedTokenHolder<TOKEN extends Token> implements TokenHolder
     {
         StorageEngine storageEngine = dependencies.resolveDependency( StorageEngine.class );
         Collection<StorageCommand> commands = new ArrayList<>();
-        TransactionState txState = new TxState();
+        TransactionState txState = new TxState( new OnHeapContainerFactory() );
         int tokenId = Math.toIntExact( idGeneratorFactory.get( tokenIdType ).nextId() );
         createToken( txState, tokenName, tokenId );
         try ( StorageStatement statement = storageEngine.storeReadLayer().newStatement() )

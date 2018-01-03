@@ -47,6 +47,7 @@ import org.neo4j.kernel.impl.api.operations.EntityWriteOperations;
 import org.neo4j.kernel.impl.api.operations.SchemaReadOperations;
 import org.neo4j.kernel.impl.api.operations.SchemaStateOperations;
 import org.neo4j.kernel.impl.api.operations.SchemaWriteOperations;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.factory.CanWrite;
 import org.neo4j.kernel.impl.locking.LockTracer;
@@ -87,7 +88,7 @@ public class LockingStatementOperationsTest
     private final Locks.Client locks = mock( Locks.Client.class );
     private final InOrder order;
     private final KernelTransactionImplementation transaction = mock( KernelTransactionImplementation.class );
-    private final TxState txState = new TxState();
+    private final TxState txState = new TxState( new OnHeapContainerFactory() );
     private final KernelStatement state = new KernelStatement( transaction, new SimpleTxStateHolder( txState ),
             mock( StorageStatement.class ), new Procedures(), new CanWrite(), LockTracer.NONE, null );
     private final SchemaStateOperations schemaStateOps;

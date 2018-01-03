@@ -237,7 +237,7 @@ public class SchemaTransactionStateTest
     @Before
     public void before() throws Exception
     {
-        txState = new TxState();
+        txState = new TxState( new OnHeapContainerFactory() );
         state = StatementOperationsTestHelper.mockedState( txState );
 
         store = mock( StoreReadLayer.class );

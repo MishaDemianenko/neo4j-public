@@ -33,6 +33,7 @@ import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.explicitindex.AutoIndexing;
 import org.neo4j.kernel.api.txstate.ExplicitIndexTransactionState;
 import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.impl.api.state.StateContainerFactory;
 import org.neo4j.kernel.impl.factory.CanWrite;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
 import org.neo4j.kernel.impl.locking.LockTracer;
@@ -151,8 +152,8 @@ public class KernelTransactionTestBase
                 hooks, null, null, headerInformationFactory, commitProcess, transactionMonitor,
                 explicitIndexStateSupplier, txPool, clock, CpuClock.NOT_AVAILABLE, HeapAllocation.NOT_AVAILABLE,
                 TransactionTracer.NULL, LockTracer.NONE,
-                PageCursorTracerSupplier.NULL, storageEngine, new CanWrite(), new Cursors(), AutoIndexing.UNSUPPORTED, mock(
-                ExplicitIndexStore.class) );
+                PageCursorTracerSupplier.NULL, storageEngine, new CanWrite(), new Cursors(), AutoIndexing.UNSUPPORTED,
+                mock( ExplicitIndexStore.class), mock( StateContainerFactory.class ) );
     }
 
     public class CapturingCommitProcess implements TransactionCommitProcess

@@ -50,7 +50,7 @@ public class TxStateCompositeIndexTest
     @Before
     public void before() throws Exception
     {
-        state = new TxState();
+        state = new TxState( new OnHeapContainerFactory() );
     }
 
     @Test

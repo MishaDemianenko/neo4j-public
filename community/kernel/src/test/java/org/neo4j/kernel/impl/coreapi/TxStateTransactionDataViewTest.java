@@ -40,6 +40,7 @@ import org.neo4j.internal.kernel.api.security.AuthSubject;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.core.NodeProxy;
 import org.neo4j.kernel.impl.core.RelationshipProxy;
@@ -74,7 +75,7 @@ public class TxStateTransactionDataViewTest
     private final StoreStatement storeStatement = mock( StoreStatement.class );
     private final KernelTransaction transaction = mock( KernelTransaction.class );
 
-    private final TransactionState state = new TxState();
+    private final TransactionState state = new TxState( new OnHeapContainerFactory() );
 
     @Before
     public void setup()

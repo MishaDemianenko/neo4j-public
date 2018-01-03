@@ -65,6 +65,8 @@ import org.neo4j.kernel.api.txstate.ExplicitIndexTransactionState;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.api.txstate.TxStateHolder;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
+import org.neo4j.kernel.impl.api.state.StateContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.factory.AccessCapability;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
@@ -127,6 +129,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final TransactionCommitProcess commitProcess;
     private final TransactionMonitor transactionMonitor;
     private final PageCursorTracerSupplier cursorTracerSupplier;
+    private final StateContainerFactory stateContainerFactory;
     private final StoreReadLayer storeLayer;
     private final Clock clock;
     private final AccessCapability accessCapability;
@@ -179,7 +182,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             Pool<KernelTransactionImplementation> pool, Clock clock, CpuClock cpuClock, HeapAllocation heapAllocation,
             TransactionTracer transactionTracer, LockTracer lockTracer, PageCursorTracerSupplier cursorTracerSupplier,
             StorageEngine storageEngine, AccessCapability accessCapability, Cursors cursors, AutoIndexing autoIndexing,
-            ExplicitIndexStore explicitIndexStore )
+            ExplicitIndexStore explicitIndexStore, StateContainerFactory stateContainerFactory )
     {
         this.statementOperations = statementOperations;
         this.schemaWriteGuard = schemaWriteGuard;
@@ -195,6 +198,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.clock = clock;
         this.transactionTracer = transactionTracer;
         this.cursorTracerSupplier = cursorTracerSupplier;
+        this.stateContainerFactory = stateContainerFactory;
         this.storageStatement = storeLayer.newStatement();
         this.currentStatement = new KernelStatement( this, this, storageStatement,
                 procedures, accessCapability, lockTracer, statementOperations );
@@ -413,7 +417,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         if ( txState == null )
         {
             transactionMonitor.upgradeToWriteTransaction();
-            txState = new TxState();
+            txState = new TxState( stateContainerFactory );
         }
         return txState;
     }

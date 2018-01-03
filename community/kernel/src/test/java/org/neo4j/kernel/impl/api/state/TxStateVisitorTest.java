@@ -80,7 +80,7 @@ public class TxStateVisitorTest
     @Before
     public void before() throws Exception
     {
-        state = new TxState();
+        state = new TxState( new OnHeapContainerFactory() );
     }
 
     static class GatheringVisitor extends TxStateVisitor.Adapter

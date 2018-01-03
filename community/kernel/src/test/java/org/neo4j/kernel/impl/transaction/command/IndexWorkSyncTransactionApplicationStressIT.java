@@ -42,6 +42,7 @@ import org.neo4j.kernel.impl.api.index.IndexProxy;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.kernel.impl.api.index.inmemory.InMemoryIndexProvider;
 import org.neo4j.kernel.impl.api.index.inmemory.InMemoryIndexProviderFactory;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.storageengine.impl.recordstorage.RecordStorageEngine;
 import org.neo4j.kernel.impl.store.NeoStores;
@@ -196,7 +197,7 @@ public class IndexWorkSyncTransactionApplicationStressIT
 
         private TransactionToApply createNodeAndProperty( int progress ) throws Exception
         {
-            TransactionState txState = new TxState();
+            TransactionState txState = new TxState( new OnHeapContainerFactory() );
             long nodeId = nodeIds.nextId();
             txState.nodeDoCreate( nodeId );
             txState.nodeDoAddLabel( descriptor.getLabelId(), nodeId );

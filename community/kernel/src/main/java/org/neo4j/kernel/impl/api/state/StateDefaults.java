@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.impl.api.state;
 
-import org.neo4j.collection.primitive.Primitive;
 import org.neo4j.collection.primitive.PrimitiveLongObjectMap;
 import org.neo4j.helpers.collection.Iterables;
 
@@ -84,7 +83,7 @@ abstract class StateDefaults<RO, RW extends RO>
         PrimitiveLongObjectMap<RW> map = getMap( state );
         if ( map == null )
         {
-            map = Primitive.longObjectMap();
+            map = state.getContainerFactory().longObjectMap();
             setMap( state, map );
         }
         RW value = map.get( key );

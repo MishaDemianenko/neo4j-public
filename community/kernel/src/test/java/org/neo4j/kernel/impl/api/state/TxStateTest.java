@@ -1402,7 +1402,7 @@ public class TxStateTest
     public void shouldObserveCorrectAugmentedNodeRelationshipsState() throws Exception
     {
         // GIVEN random committed state
-        TxState state = new TxState();
+        TxState state = new TxState( new OnHeapContainerFactory() );
         for ( int i = 0; i < 100; i++ )
         {
             state.nodeDoCreate( i );
@@ -1629,7 +1629,7 @@ public class TxStateTest
     @Before
     public void before() throws Exception
     {
-        state = new TxState();
+        state = new TxState( new OnHeapContainerFactory() );
     }
 
     private interface IndexUpdater

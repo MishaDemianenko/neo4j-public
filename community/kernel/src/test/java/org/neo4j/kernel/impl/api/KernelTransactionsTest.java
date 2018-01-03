@@ -43,6 +43,7 @@ import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.explicitindex.AutoIndexing;
 import org.neo4j.kernel.api.security.AnonymousContext;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
+import org.neo4j.kernel.impl.api.state.StateContainerFactory;
 import org.neo4j.kernel.impl.factory.AccessCapability;
 import org.neo4j.kernel.impl.factory.CanWrite;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
@@ -589,8 +590,8 @@ public class KernelTransactionsTest
                 commitProcess, null, null, new TransactionHooks(), mock( TransactionMonitor.class ),
                 availabilityGuard,
                 tracers, storageEngine, new Procedures(), transactionIdStore, clock, CpuClock.NOT_AVAILABLE,
-                HeapAllocation.NOT_AVAILABLE, new CanWrite(), new Cursors(), AutoIndexing.UNSUPPORTED, mock(
-                ExplicitIndexStore.class) );
+                HeapAllocation.NOT_AVAILABLE, new CanWrite(), new Cursors(), AutoIndexing.UNSUPPORTED,
+                mock( ExplicitIndexStore.class), mock( StateContainerFactory.class ) );
     }
 
     private static TestKernelTransactions createTestTransactions( StorageEngine storageEngine,
@@ -657,7 +658,7 @@ public class KernelTransactionsTest
                     txHeaderFactory, transactionCommitProcess, indexConfigStore, explicitIndexProviderLookup, hooks,
                     transactionMonitor, availabilityGuard, tracers, storageEngine, procedures, transactionIdStore,
                     clock, CpuClock.NOT_AVAILABLE, HeapAllocation.NOT_AVAILABLE, accessCapability, cursors,
-                    autoIndexing, mock( ExplicitIndexStore.class) );
+                    autoIndexing, mock( ExplicitIndexStore.class), mock( StateContainerFactory.class ) );
         }
 
         @Override

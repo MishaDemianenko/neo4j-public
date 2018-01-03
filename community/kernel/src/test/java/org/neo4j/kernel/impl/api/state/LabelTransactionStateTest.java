@@ -68,7 +68,7 @@ public class LabelTransactionStateTest
         when( store.indexesGetForLabel( anyInt() ) ).then( answerAsIteratorFrom( Collections.emptyList() ) );
         when( store.indexesGetAll() ).then( answerAsIteratorFrom( Collections.emptyList() ) );
 
-        txState = new TxState();
+        txState = new TxState( new OnHeapContainerFactory() );
         state = StatementOperationsTestHelper.mockedState( txState );
         txContext = new StateHandlingStatementOperations( store, mock( InternalAutoIndexing.class ),
                 mock( ConstraintIndexCreator.class ), mock( ExplicitIndexStore.class ) );

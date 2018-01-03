@@ -43,6 +43,7 @@ import org.neo4j.kernel.api.schema.constaints.RelExistenceConstraintDescriptor;
 import org.neo4j.kernel.api.schema.constaints.UniquenessConstraintDescriptor;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
+import org.neo4j.kernel.impl.api.state.OnHeapContainerFactory;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
 import org.neo4j.kernel.impl.locking.LockTracer;
@@ -87,7 +88,7 @@ public class OperationsLockTest
     @Before
     public void setUp() throws InvalidTransactionTypeKernelException
     {
-        txState = new TxState();
+        txState = new TxState( new OnHeapContainerFactory() );
         when( transaction.getReasonIfTerminated() ).thenReturn( Optional.empty() );
         when( transaction.locks() ).thenReturn( new SimpleStatementLocks( locks ) );
         when( transaction.dataWrite() ).thenReturn( write );

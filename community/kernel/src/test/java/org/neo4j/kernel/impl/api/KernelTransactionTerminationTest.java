@@ -37,6 +37,7 @@ import org.neo4j.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.explicitindex.AutoIndexing;
 import org.neo4j.kernel.api.txstate.ExplicitIndexTransactionState;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
+import org.neo4j.kernel.impl.api.state.StateContainerFactory;
 import org.neo4j.kernel.impl.factory.CanWrite;
 import org.neo4j.kernel.impl.index.ExplicitIndexStore;
 import org.neo4j.kernel.impl.locking.LockTracer;
@@ -343,7 +344,7 @@ public class KernelTransactionTerminationTest
                     TransactionTracer.NULL,
                     LockTracer.NONE, PageCursorTracerSupplier.NULL,
                     mock( StorageEngine.class, RETURNS_MOCKS ), new CanWrite(), mock( Cursors.class ),
-                    AutoIndexing.UNSUPPORTED, mock( ExplicitIndexStore.class ) );
+                    AutoIndexing.UNSUPPORTED, mock( ExplicitIndexStore.class ), mock( StateContainerFactory.class ) );
 
             this.monitor = monitor;
         }

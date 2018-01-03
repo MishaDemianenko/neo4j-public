@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-import org.neo4j.collection.primitive.Primitive;
 import org.neo4j.collection.primitive.PrimitiveIntObjectMap;
 import org.neo4j.collection.primitive.PrimitiveIntObjectVisitor;
 import org.neo4j.collection.primitive.PrimitiveIntSet;
@@ -93,6 +92,7 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     private static final LabelState.Defaults LABEL_STATE = new TransactionLabelState();
     private static final NodeStateImpl.Defaults NODE_STATE = new TransactionNodeState();
     private static final RelationshipStateImpl.Defaults RELATIONSHIP_STATE = new TransactionRelationshipState();
+    private final StateContainerFactory containerFactory;
 
     private PrimitiveLongObjectMap<LabelState.Mutable> labelStatesMap;
     private PrimitiveLongObjectMap<NodeStateImpl> nodeStatesMap;
@@ -135,8 +135,9 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     private boolean hasChanges;
     private boolean hasDataChanges;
 
-    public TxState()
+    public TxState( StateContainerFactory containerFactory )
     {
+        this.containerFactory = containerFactory;
         singleNodeCursor = new InstanceCache<TxSingleNodeCursor>()
         {
             @Override
@@ -606,7 +607,7 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     {
         if ( createdLabelTokens == null )
         {
-            createdLabelTokens = Primitive.intObjectMap();
+            createdLabelTokens = containerFactory.intObjectMap();
         }
         createdLabelTokens.put( id, labelName );
         changed();
@@ -617,7 +618,7 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     {
         if ( createdPropertyKeyTokens == null )
         {
-            createdPropertyKeyTokens = Primitive.intObjectMap();
+            createdPropertyKeyTokens = containerFactory.intObjectMap();
         }
         createdPropertyKeyTokens.put( id, propertyKeyName );
         changed();
@@ -628,7 +629,7 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     {
         if ( createdRelationshipTypeTokens == null )
         {
-            createdRelationshipTypeTokens = Primitive.intObjectMap();
+            createdRelationshipTypeTokens = containerFactory.intObjectMap();
         }
         createdRelationshipTypeTokens.put( id, labelName );
         changed();
@@ -1272,7 +1273,7 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     {
         if ( nodesDeletedInTx == null )
         {
-            nodesDeletedInTx = Primitive.longSet();
+            nodesDeletedInTx = containerFactory.longSet();
         }
         nodesDeletedInTx.add( id );
     }
@@ -1281,9 +1282,14 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     {
         if ( relationshipsDeletedInTx == null )
         {
-            relationshipsDeletedInTx = Primitive.longSet();
+            relationshipsDeletedInTx = containerFactory.longSet();
         }
         relationshipsDeletedInTx.add( id );
+    }
+
+    public StateContainerFactory getContainerFactory()
+    {
+        return containerFactory;
     }
 
     private static class LabelTokenStateVisitor implements PrimitiveIntObjectVisitor<String,RuntimeException>
