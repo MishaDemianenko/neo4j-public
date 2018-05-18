@@ -27,7 +27,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import org.neo4j.collection.pool.LinkedQueuePool;
-import org.neo4j.collection.pool.MarshlandPool;
 import org.neo4j.function.Factory;
 import org.neo4j.graphdb.DatabaseShutdownException;
 import org.neo4j.graphdb.TransactionFailureException;
@@ -122,11 +121,6 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
 
     // This is the factory that actually builds brand-new instances.
     private final Factory<KernelTransactionImplementation> factory = new KernelTransactionImplementationFactory( allTransactions );
-    // Global pool of transactions, wrapped by the thread-local marshland pool and so is not used directly.
-    private final LinkedQueuePool<KernelTransactionImplementation> globalTxPool =
-            new GlobalKernelTransactionPool( allTransactions, factory );
-    // Pool of unused transactions.
-    private final MarshlandPool<KernelTransactionImplementation> localTxPool = new MarshlandPool<>( globalTxPool );
     private final ConstraintSemantics constraintSemantics;
 
     /**
@@ -201,10 +195,10 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
             {
                 assertRunning();
                 TransactionId lastCommittedTransaction = transactionIdStore.getLastCommittedTransaction();
-                KernelTransactionImplementation tx = localTxPool.acquire();
+                KernelTransactionImplementation tx = factory.newInstance();
                 StatementLocks statementLocks = statementLocksFactory.newInstance();
                 tx.initialize( lastCommittedTransaction.transactionId(), lastCommittedTransaction.commitTimestamp(),
-                        statementLocks, type, securityContext, timeout, userTransactionIdCounter.incrementAndGet() );
+                        statementLocks, type, securityContext, timeout, userTransactionIdCounter.incrementAndGet(), allTransactions );
                 return tx;
             }
             finally
@@ -241,8 +235,6 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
     public void disposeAll()
     {
         terminateTransactions();
-        localTxPool.close();
-        globalTxPool.close();
     }
 
     public void terminateTransactions()
@@ -372,7 +364,7 @@ public class KernelTransactions extends LifecycleAdapter implements Supplier<Ker
             KernelTransactionImplementation tx =
                     new KernelTransactionImplementation( statementOperations, schemaWriteGuard, hooks,
                             constraintIndexCreator, procedures, transactionHeaderInformationFactory,
-                            transactionCommitProcess, transactionMonitor, explicitIndexTxStateSupplier, localTxPool,
+                            transactionCommitProcess, transactionMonitor, explicitIndexTxStateSupplier,
                             clock, cpuClockRef, heapAllocationRef, tracers.transactionTracer, tracers.lockTracer,
                             tracers.pageCursorTracerSupplier, storageEngine, accessCapability,
                             cursorsSupplier.get(), autoIndexing,

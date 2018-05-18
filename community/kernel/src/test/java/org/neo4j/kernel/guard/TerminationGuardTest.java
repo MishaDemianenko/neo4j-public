@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Answers;
 
+import java.util.HashSet;
+
 import org.neo4j.graphdb.TransactionTerminatedException;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -85,7 +87,7 @@ public class TerminationGuardTest extends KernelTransactionTestBase
         StatementLocks statementLocks = mock( StatementLocks.class, Answers.RETURNS_DEEP_STUBS );
         when( statementLocks.pessimistic().getLockSessionId() ).thenReturn( 1 );
         transaction.initialize( 1L, 2L, statementLocks, KernelTransaction.Type.implicit,
-                AUTH_DISABLED, 1L, 1L );
+                AUTH_DISABLED, 1L, 1L, new HashSet<>(  ) );
         return transaction;
     }
 

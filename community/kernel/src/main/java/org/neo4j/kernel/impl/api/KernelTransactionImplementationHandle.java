@@ -41,7 +41,6 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
 {
     private static final String USER_TRANSACTION_NAME_PREFIX = "transaction-";
 
-    private final long txReuseCount;
     private final long lastTransactionIdWhenStarted;
     private final long lastTransactionTimestampWhenStarted;
     private final long startTime;
@@ -56,7 +55,6 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
 
     KernelTransactionImplementationHandle( KernelTransactionImplementation tx, SystemNanoClock clock )
     {
-        this.txReuseCount = tx.getReuseCount();
         this.lastTransactionIdWhenStarted = tx.lastTransactionIdWhenStarted();
         this.lastTransactionTimestampWhenStarted = tx.lastTransactionTimestampWhenStarted();
         this.startTime = tx.startTime();
@@ -97,13 +95,14 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
     @Override
     public boolean isOpen()
     {
-        return tx.isOpen() && txReuseCount == tx.getReuseCount();
+        return tx.isOpen();
     }
 
     @Override
     public boolean markForTermination( Status reason )
     {
-        return tx.markForTermination( txReuseCount, reason );
+        tx.markForTermination( reason );
+        return true;
     }
 
     @Override
@@ -157,14 +156,7 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
     @Override
     public TransactionExecutionStatistic transactionStatistic()
     {
-        if ( txReuseCount == tx.getReuseCount() )
-        {
-            return new TransactionExecutionStatistic( tx, clock, startTime );
-        }
-        else
-        {
-            return TransactionExecutionStatistic.NOT_AVAILABLE;
-        }
+        return new TransactionExecutionStatistic( tx, clock, startTime );
     }
 
     @Override
@@ -179,18 +171,18 @@ class KernelTransactionImplementationHandle implements KernelTransactionHandle
             return false;
         }
         KernelTransactionImplementationHandle that = (KernelTransactionImplementationHandle) o;
-        return txReuseCount == that.txReuseCount && tx.equals( that.tx );
+        return tx.equals( that.tx );
     }
 
     @Override
     public int hashCode()
     {
-        return 31 * (int) (txReuseCount ^ (txReuseCount >>> 32)) + tx.hashCode();
+        return 31 + tx.hashCode();
     }
 
     @Override
     public String toString()
     {
-        return "KernelTransactionImplementationHandle{txReuseCount=" + txReuseCount + ", tx=" + tx + "}";
+        return "KernelTransactionImplementationHandle{tx=" + tx + "}";
     }
 }

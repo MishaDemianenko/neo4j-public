@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import org.neo4j.collection.pool.Pool;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
 import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
@@ -217,7 +216,7 @@ public class TransactionStatusResultTest
                         mock( StatementOperationParts.class ), mock( SchemaWriteGuard.class ), new TransactionHooks(),
                         mock( ConstraintIndexCreator.class ), new Procedures(), TransactionHeaderInformationFactory.DEFAULT,
                         mock( TransactionCommitProcess.class ), new TransactionStats(), () -> mock( ExplicitIndexTransactionState.class ),
-                        mock( Pool.class ), Clocks.fakeClock(),
+                        Clocks.fakeClock(),
                         new AtomicReference<>( CpuClock.NOT_AVAILABLE ), new AtomicReference<>( HeapAllocation.NOT_AVAILABLE ),
                         TransactionTracer.NULL,
                         LockTracer.NONE, PageCursorTracerSupplier.NULL,

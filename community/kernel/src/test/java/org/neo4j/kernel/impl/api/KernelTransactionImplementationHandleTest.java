@@ -26,11 +26,7 @@ import org.neo4j.time.Clocks;
 import org.neo4j.time.SystemNanoClock;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,21 +78,6 @@ public class KernelTransactionImplementationHandleTest
     }
 
     @Test
-    public void isOpenForReusedKernelTransactionImplementation()
-    {
-        int initialReuseCount = 42;
-        int nextReuseCount = 4242;
-
-        KernelTransactionImplementation tx = mock( KernelTransactionImplementation.class );
-        when( tx.isOpen() ).thenReturn( true );
-        when( tx.getReuseCount() ).thenReturn( initialReuseCount ).thenReturn( nextReuseCount );
-
-        KernelTransactionImplementationHandle handle = new KernelTransactionImplementationHandle( tx, clock );
-
-        assertFalse( handle.isOpen() );
-    }
-
-    @Test
     public void markForTerminationCallsKernelTransactionImplementation()
     {
         int reuseCount = 42;
@@ -108,7 +89,7 @@ public class KernelTransactionImplementationHandleTest
         KernelTransactionImplementationHandle handle = new KernelTransactionImplementationHandle( tx, clock );
         handle.markForTermination( terminationReason );
 
-        verify( tx ).markForTermination( reuseCount, terminationReason );
+        verify( tx ).markForTermination( terminationReason );
     }
 
     @Test
@@ -116,31 +97,8 @@ public class KernelTransactionImplementationHandleTest
     {
         KernelTransactionImplementation tx = mock( KernelTransactionImplementation.class );
         when( tx.getReuseCount() ).thenReturn( 42 );
-        when( tx.markForTermination( anyLong(), any() ) ).thenReturn( true );
 
         KernelTransactionImplementationHandle handle = new KernelTransactionImplementationHandle( tx, clock );
         assertTrue( handle.markForTermination( Status.Transaction.Terminated ) );
-    }
-
-    @Test
-    public void markForTerminationReturnsFalseWhenNotSuccessful()
-    {
-        KernelTransactionImplementation tx = mock( KernelTransactionImplementation.class );
-        when( tx.getReuseCount() ).thenReturn( 42 );
-        when( tx.markForTermination( anyLong(), any() ) ).thenReturn( false );
-
-        KernelTransactionImplementationHandle handle = new KernelTransactionImplementationHandle( tx, clock );
-        assertFalse( handle.markForTermination( Status.Transaction.Terminated ) );
-    }
-
-    @Test
-    public void transactionStatisticForReusedTransactionIsNotAvailable()
-    {
-        KernelTransactionImplementation tx = mock( KernelTransactionImplementation.class );
-        when( tx.isOpen() ).thenReturn( true );
-        when( tx.getReuseCount() ).thenReturn( 2 ).thenReturn( 3 );
-
-        KernelTransactionImplementationHandle handle = new KernelTransactionImplementationHandle( tx, clock );
-        assertSame( TransactionExecutionStatistic.NOT_AVAILABLE, handle.transactionStatistic() );
     }
 }

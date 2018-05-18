@@ -19,10 +19,10 @@
  */
 package org.neo4j.kernel.api;
 
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import org.neo4j.collection.pool.Pool;
 import org.neo4j.internal.kernel.api.security.LoginContext;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier;
 import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier;
@@ -96,7 +96,6 @@ public class KernelTransactionFactory
                 mock( ConstraintIndexCreator.class ), new Procedures(), headerInformationFactory,
                 mock( TransactionRepresentationCommitProcess.class ), mock( TransactionMonitor.class ),
                 mock( Supplier.class ),
-                mock( Pool.class ),
                 Clocks.systemClock(), new AtomicReference<>( CpuClock.NOT_AVAILABLE ), new AtomicReference<>( HeapAllocation.NOT_AVAILABLE ), NULL,
                 LockTracer.NONE,
                 PageCursorTracerSupplier.NULL,
@@ -107,7 +106,7 @@ public class KernelTransactionFactory
         StatementLocks statementLocks = new SimpleStatementLocks( new NoOpClient() );
 
         transaction.initialize( 0, 0, statementLocks, KernelTransaction.Type.implicit,
-                loginContext.authorize( s -> -1 ), 0L, 1L );
+                loginContext.authorize( s -> -1 ), 0L, 1L, new HashSet<>(  ) );
 
         return new Instances( transaction, storageEngine, storageReader );
     }

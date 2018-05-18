@@ -80,7 +80,7 @@ public class KernelTransactionTimeoutMonitorTest
         fakeClock.forward( 2, TimeUnit.MILLISECONDS );
         transactionMonitor.run();
 
-        verify( tx1 ).markForTermination( EXPECTED_REUSE_COUNT, Status.Transaction.TransactionTimedOut );
+        verify( tx1 ).markForTermination( Status.Transaction.TransactionTimedOut );
         verify( tx2, never() ).markForTermination( Status.Transaction.TransactionTimedOut );
         logProvider.assertContainsLogCallContaining( "timeout" );
 
@@ -88,7 +88,7 @@ public class KernelTransactionTimeoutMonitorTest
         fakeClock.forward( 10, TimeUnit.MILLISECONDS );
         transactionMonitor.run();
 
-        verify( tx2 ).markForTermination( EXPECTED_REUSE_COUNT, Status.Transaction.TransactionTimedOut );
+        verify( tx2 ).markForTermination( Status.Transaction.TransactionTimedOut );
         logProvider.assertContainsLogCallContaining( "timeout" );
     }
 
@@ -126,7 +126,6 @@ public class KernelTransactionTimeoutMonitorTest
         when( transaction.startTime() ).thenReturn( startMillis );
         when( transaction.getReuseCount() ).thenReturn( EXPECTED_REUSE_COUNT );
         when( transaction.timeout() ).thenReturn( timeoutMillis );
-        when( transaction.markForTermination( EXPECTED_REUSE_COUNT, Status.Transaction.TransactionTimedOut ) ).thenReturn( true );
         return transaction;
     }
 }

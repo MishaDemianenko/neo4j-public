@@ -96,7 +96,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -193,21 +192,6 @@ public class KernelTransactionsTest
         byte[] additionalHeader = transactionRepresentation[0].additionalHeader();
         assertNotNull( additionalHeader );
         assertTrue( additionalHeader.length > 0 );
-    }
-
-    @Test
-    public void shouldReuseClosedTransactionObjects() throws Throwable
-    {
-        // GIVEN
-        KernelTransactions transactions = newKernelTransactions();
-        KernelTransaction a = getKernelTransaction( transactions );
-
-        // WHEN
-        a.close();
-        KernelTransaction b = getKernelTransaction( transactions );
-
-        // THEN
-        assertSame( a, b );
     }
 
     @Test

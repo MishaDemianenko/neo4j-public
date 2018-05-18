@@ -27,10 +27,10 @@ import org.junit.Before;
 import org.mockito.Mockito;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import org.neo4j.collection.pool.Pool;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.internal.kernel.api.Transaction.Type;
 import org.neo4j.internal.kernel.api.security.LoginContext;
@@ -98,7 +98,6 @@ public class KernelTransactionTestBase
     protected final TransactionHeaderInformationFactory headerInformationFactory =  mock( TransactionHeaderInformationFactory.class );
     protected final SchemaWriteGuard schemaWriteGuard = mock( SchemaWriteGuard.class );
     protected final FakeClock clock = Clocks.fakeClock();
-    protected final Pool<KernelTransactionImplementation> txPool = mock( Pool.class );
     protected final StatementOperationParts statementOperations = mock( StatementOperationParts.class );
     protected CollectionsFactory collectionsFactory;
 
@@ -154,14 +153,14 @@ public class KernelTransactionTestBase
         StatementLocks statementLocks = new SimpleStatementLocks( locks );
         SecurityContext securityContext = loginContext.authorize( s -> -1 );
         tx.initialize( lastTransactionIdWhenStarted, BASE_TX_COMMIT_TIMESTAMP,statementLocks, Type.implicit,
-                securityContext, transactionTimeout, 1L );
+                securityContext, transactionTimeout, 1L, new HashSet<>() );
         return tx;
     }
 
     public KernelTransactionImplementation newNotInitializedTransaction()
     {
         return new KernelTransactionImplementation( statementOperations, schemaWriteGuard, hooks, null, null, headerInformationFactory, commitProcess,
-                transactionMonitor, explicitIndexStateSupplier, txPool, clock, new AtomicReference<>( CpuClock.NOT_AVAILABLE ),
+                transactionMonitor, explicitIndexStateSupplier, clock, new AtomicReference<>( CpuClock.NOT_AVAILABLE ),
                 new AtomicReference<>( HeapAllocation.NOT_AVAILABLE ), TransactionTracer.NULL, LockTracer.NONE, PageCursorTracerSupplier.NULL, storageEngine,
                 new CanWrite(), new DefaultCursors(), AutoIndexing.UNSUPPORTED,
                 mock( ExplicitIndexStore.class ), EmptyVersionContextSupplier.EMPTY, () -> collectionsFactory,

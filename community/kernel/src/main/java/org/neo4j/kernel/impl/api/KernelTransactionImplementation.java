@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.neo4j.collection.pool.Pool;
 import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.graphdb.TransactionTerminatedException;
 import org.neo4j.internal.kernel.api.CursorFactory;
@@ -131,7 +131,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final ConstraintIndexCreator constraintIndexCreator;
     private final StorageEngine storageEngine;
     private final TransactionTracer transactionTracer;
-    private final Pool<KernelTransactionImplementation> pool;
     private final Supplier<ExplicitIndexTransactionState> explicitIndexTxStateSupplier;
 
     // For committing
@@ -155,6 +154,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private SecurityContext securityContext;
     private volatile StatementLocks statementLocks;
     private volatile long userTransactionId;
+    private Set<KernelTransactionImplementation> allTransactions;
     private boolean beforeHookInvoked;
     private volatile boolean closing;
     private volatile boolean closed;
@@ -170,7 +170,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private Type type;
     private long transactionId;
     private long commitTime;
-    private volatile int reuseCount;
     private volatile Map<String,Object> userMetaData;
     private final Operations operations;
 
@@ -178,8 +177,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
      * Lock prevents transaction {@link #markForTermination(Status)}  transaction termination} from interfering with
      * {@link #close() transaction commit} and specifically with {@link #release()}.
      * Termination can run concurrently with commit and we need to make sure that it terminates the right lock client
-     * and the right transaction (with the right {@link #reuseCount}) because {@link KernelTransactionImplementation}
-     * instances are pooled.
+     * and the right transaction.
      */
     private final Lock terminationReleaseLock = new ReentrantLock();
 
@@ -188,7 +186,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             TransactionHooks hooks, ConstraintIndexCreator constraintIndexCreator, Procedures procedures,
             TransactionHeaderInformationFactory headerInformationFactory, TransactionCommitProcess commitProcess,
             TransactionMonitor transactionMonitor, Supplier<ExplicitIndexTransactionState> explicitIndexTxStateSupplier,
-            Pool<KernelTransactionImplementation> pool, Clock clock, AtomicReference<CpuClock> cpuClockRef, AtomicReference<HeapAllocation> heapAllocationRef,
+            Clock clock, AtomicReference<CpuClock> cpuClockRef, AtomicReference<HeapAllocation> heapAllocationRef,
             TransactionTracer transactionTracer, LockTracer lockTracer, PageCursorTracerSupplier cursorTracerSupplier,
             StorageEngine storageEngine, AccessCapability accessCapability, DefaultCursors cursors, AutoIndexing autoIndexing,
             ExplicitIndexStore explicitIndexStore, VersionContextSupplier versionContextSupplier,
@@ -204,7 +202,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.storageReader = storageEngine.newReader();
         this.storageEngine = storageEngine;
         this.explicitIndexTxStateSupplier = explicitIndexTxStateSupplier;
-        this.pool = pool;
         this.clocks = new ClockContext( clock );
         this.transactionTracer = transactionTracer;
         this.cursorTracerSupplier = cursorTracerSupplier;
@@ -231,11 +228,12 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
      * Reset this transaction to a vanilla state, turning it into a logically new transaction.
      */
     public KernelTransactionImplementation initialize( long lastCommittedTx, long lastTimeStamp, StatementLocks statementLocks, Type type,
-            SecurityContext frozenSecurityContext, long transactionTimeout, long userTransactionId )
+            SecurityContext frozenSecurityContext, long transactionTimeout, long userTransactionId, Set<KernelTransactionImplementation> allTransactions )
     {
         this.type = type;
         this.statementLocks = statementLocks;
         this.userTransactionId = userTransactionId;
+        this.allTransactions = allTransactions;
         this.terminationReason = null;
         this.closing = false;
         this. closed = false;
@@ -261,7 +259,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
 
     int getReuseCount()
     {
-        return reuseCount;
+        return 0;
     }
 
     @Override
@@ -303,19 +301,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     public Optional<Status> getReasonIfTerminated()
     {
         return Optional.ofNullable( terminationReason );
-    }
-
-    boolean markForTermination( long expectedReuseCount, Status reason )
-    {
-        terminationReleaseLock.lock();
-        try
-        {
-            return expectedReuseCount == reuseCount && markForTerminationIfPossible( reason );
-        }
-        finally
-        {
-            terminationReleaseLock.unlock();
-        }
     }
 
     /**
@@ -927,12 +912,12 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             }
             hooksState = null;
             closeListeners.clear();
-            reuseCount++;
             userMetaData = Collections.emptyMap();
             userTransactionId = 0;
             statistics.reset();
             operations.release();
-            pool.release( this );
+            allTransactions.remove( this );
+            storageReader.close();
         }
         finally
         {

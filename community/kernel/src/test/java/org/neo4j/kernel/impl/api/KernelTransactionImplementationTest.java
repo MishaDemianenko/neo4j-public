@@ -27,6 +27,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +71,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -387,7 +387,7 @@ public class KernelTransactionImplementationTest extends KernelTransactionTestBa
         {
             SimpleStatementLocks statementLocks = new SimpleStatementLocks( mock( Locks.Client.class ) );
             transaction.initialize( 5L, BASE_TX_COMMIT_TIMESTAMP, statementLocks, KernelTransaction.Type.implicit,
-                    SecurityContext.AUTH_DISABLED, 0L, 1L );
+                    SecurityContext.AUTH_DISABLED, 0L, 1L, new HashSet<>(  ) );
             transaction.txState();
             try ( KernelStatement statement = transaction.acquireStatement() )
             {
@@ -407,28 +407,6 @@ public class KernelTransactionImplementationTest extends KernelTransactionTestBa
         assertEquals( startingTime + 5, commitProcess.transaction.getTimeCommitted() );
     }
 
-    @Test
-    public void successfulTxShouldNotifyKernelTransactionsThatItIsClosed() throws TransactionFailureException
-    {
-        KernelTransactionImplementation tx = newTransaction( loginContext() );
-
-        tx.success();
-        tx.close();
-
-        verify( txPool ).release( tx );
-    }
-
-    @Test
-    public void failedTxShouldNotifyKernelTransactionsThatItIsClosed() throws TransactionFailureException
-    {
-        KernelTransactionImplementation tx = newTransaction( loginContext() );
-
-        tx.failure();
-        tx.close();
-
-        verify( txPool ).release( tx );
-    }
-
     private void verifyExtraInteractionWithTheMonitor( TransactionMonitor transactionMonitor, boolean isWriteTx )
     {
         if ( isWriteTx )
@@ -436,23 +414,6 @@ public class KernelTransactionImplementationTest extends KernelTransactionTestBa
             verify( this.transactionMonitor, times( 1 ) ).upgradeToWriteTransaction();
         }
         verifyNoMoreInteractions( transactionMonitor );
-    }
-
-    @Test
-    public void shouldIncrementReuseCounterOnReuse() throws Exception
-    {
-        // GIVEN
-        KernelTransactionImplementation transaction = newTransaction( loginContext() );
-        int reuseCount = transaction.getReuseCount();
-
-        // WHEN
-        transaction.close();
-        SimpleStatementLocks statementLocks = new SimpleStatementLocks( new NoOpClient() );
-        transaction.initialize( 1, BASE_TX_COMMIT_TIMESTAMP, statementLocks, KernelTransaction.Type.implicit,
-                loginContext().authorize( s -> -1 ), 0L, 1L );
-
-        // THEN
-        assertEquals( reuseCount + 1, transaction.getReuseCount() );
     }
 
     @Test
@@ -670,33 +631,12 @@ public class KernelTransactionImplementationTest extends KernelTransactionTestBa
 
         Locks.Client locksClient = mock( Locks.Client.class );
         SimpleStatementLocks statementLocks = new SimpleStatementLocks( locksClient );
-        tx.initialize( 42, 42, statementLocks, KernelTransaction.Type.implicit, loginContext().authorize( s -> -1 ), 0L, 0L );
+        tx.initialize( 42, 42, statementLocks, KernelTransaction.Type.implicit, loginContext().authorize( s -> -1 ), 0L, 0L, new HashSet<>(  ) );
 
-        assertTrue( tx.markForTermination( reuseCount, terminationReason ) );
+        tx.markForTermination(  terminationReason );
 
         assertEquals( terminationReason, tx.getReasonIfTerminated().get() );
         verify( locksClient ).stop();
-    }
-
-    @Test
-    public void markForTerminationWithIncorrectReuseCount() throws Exception
-    {
-        int reuseCount = 13;
-        int nextReuseCount = reuseCount + 2;
-        Status.Transaction terminationReason = Status.Transaction.Terminated;
-
-        KernelTransactionImplementation tx = newNotInitializedTransaction( );
-        initializeAndClose( tx, reuseCount );
-
-        Locks.Client locksClient = mock( Locks.Client.class );
-        SimpleStatementLocks statementLocks = new SimpleStatementLocks( locksClient );
-        tx.initialize( 42, 42, statementLocks, KernelTransaction.Type.implicit,
-                loginContext().authorize( s -> -1 ), 0L, 0L );
-
-        assertFalse( tx.markForTermination( nextReuseCount, terminationReason ) );
-
-        assertFalse( tx.getReasonIfTerminated().isPresent() );
-        verify( locksClient, never() ).stop();
     }
 
     @Test
@@ -758,7 +698,7 @@ public class KernelTransactionImplementationTest extends KernelTransactionTestBa
         for ( int i = 0; i < times; i++ )
         {
             SimpleStatementLocks statementLocks = new SimpleStatementLocks( new NoOpClient() );
-            tx.initialize( i + 10, i + 10, statementLocks, KernelTransaction.Type.implicit, loginContext().authorize( s -> -1 ), 0L, 0L );
+            tx.initialize( i + 10, i + 10, statementLocks, KernelTransaction.Type.implicit, loginContext().authorize( s -> -1 ), 0L, 0L, new HashSet<>(  ) );
             tx.close();
         }
     }
