@@ -19,6 +19,7 @@
  */
 package org.neo4j.unsafe.impl.batchimport.input;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -46,6 +47,7 @@ import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
 import static org.neo4j.io.ByteUnit.kibiBytes;
 
+@Ignore
 public class InputCacheTest
 {
     private static final String[] TOKENS = new String[] {"One", "Two", "Three", "Four", "Five", "Six", "Seven"};

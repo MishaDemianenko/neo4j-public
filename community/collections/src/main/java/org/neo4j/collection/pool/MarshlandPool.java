@@ -23,6 +23,8 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Collections.newSetFromMap;
 
@@ -48,8 +50,6 @@ public class MarshlandPool<T> implements Pool<T>
      *  - If none found, use the delegate pool.
      */
 
-    private final Pool<T> delegate;
-
     // Used to reclaim objects from dead threads
     private final Set<LocalSlotReference<T>> slotReferences = newSetFromMap( new ConcurrentHashMap<>() );
     private final ReferenceQueue<LocalSlot<T>> objectsFromDeadThreads = new ReferenceQueue<>();
@@ -60,10 +60,13 @@ public class MarshlandPool<T> implements Pool<T>
         slotReferences.add( localSlot.slotWeakReference );
         return localSlot;
     } );
+    private final Supplier<T> supplier;
+    private Consumer<T> consumer;
 
-    public MarshlandPool( Pool<T> delegatePool )
+    public MarshlandPool( Supplier<T> supplier, Consumer<T> consumer )
     {
-        this.delegate = delegatePool;
+        this.supplier = supplier;
+        this.consumer = consumer;
     }
 
     @SuppressWarnings( "unchecked" )
@@ -89,7 +92,7 @@ public class MarshlandPool<T> implements Pool<T>
         }
 
         // Fall back to the delegate pool
-        return delegate.acquire();
+        return supplier.get();
     }
 
     @Override
@@ -102,9 +105,9 @@ public class MarshlandPool<T> implements Pool<T>
         {
             localSlot.set( obj );
         }
-        else // Fall back to the delegate pool
+        else
         {
-            delegate.release( obj );
+            consumer.accept( obj );
         }
     }
 
@@ -124,7 +127,7 @@ public class MarshlandPool<T> implements Pool<T>
                 if ( obj != null )
                 {
                     slot.set( null );
-                    delegate.release( obj );
+                    consumer.accept( obj );
                 }
             }
         }
@@ -134,7 +137,7 @@ public class MarshlandPool<T> implements Pool<T>
             T obj = reference.localSlotReferenceObject;
             if ( obj != null )
             {
-                delegate.release( obj );
+                consumer.accept( obj );
             }
         }
     }
