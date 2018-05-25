@@ -32,6 +32,7 @@ import org.neo4j.io.pagecache.tracing.PinEvent;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
 import org.neo4j.unsafe.impl.internal.dragons.UnsafeUtil;
 
+import static java.lang.String.format;
 import static org.neo4j.io.pagecache.PagedFile.PF_SHARED_WRITE_LOCK;
 import static org.neo4j.unsafe.impl.internal.dragons.FeatureToggles.flag;
 
@@ -53,6 +54,7 @@ abstract class MuninnPageCursor extends PageCursor
 
     private final long victimPage;
     private final PageCursorTracer tracer;
+    protected Exception closeException;
     protected MuninnPagedFile pagedFile;
     protected PageSwapper swapper;
     protected MuninnPage page;
@@ -68,6 +70,9 @@ abstract class MuninnPageCursor extends PageCursor
     private int offset;
     private boolean outOfBounds;
     private boolean isLinkedCursor;
+
+    private final String creatorSignature;
+
     // This is a String with the exception message if usePreciseCursorErrorStackTraces is false, otherwise it is a
     // CursorExceptionWithPreciseStackTrace with the message and stack trace pointing more or less directly at the
     // offending code.
@@ -78,6 +83,7 @@ abstract class MuninnPageCursor extends PageCursor
         this.victimPage = victimPage;
         this.pointer = victimPage;
         this.tracer = tracer;
+        creatorSignature = getThreadSignature();
     }
 
     final void initialiseFile( MuninnPagedFile pagedFile )
@@ -91,6 +97,7 @@ abstract class MuninnPageCursor extends PageCursor
         this.pageId = pageId;
         this.pf_flags = pf_flags;
         this.filePageSize = pagedFile.filePageSize;
+        this.closeException = null;
     }
 
     @Override
@@ -130,6 +137,7 @@ abstract class MuninnPageCursor extends PageCursor
         {
             return; // already closed
         }
+        closeException = new Exception();
         closeLinks( this );
         if ( !isLinkedCursor )
         {
@@ -380,6 +388,20 @@ abstract class MuninnPageCursor extends PageCursor
 
     long assertPagedFileStillMappedAndGetIdOfLastPage()
     {
+        if ( pagedFile == null )
+        {
+            String currentThreadSignature = getThreadSignature();
+            if ( closeException == null )
+            {
+                String notClosedMessage =
+                        format( "Cursor is not mapped and close stack trace is not present. Creator: %s. Current executor: %s.",
+                                creatorSignature, currentThreadSignature );
+                throw new IllegalStateException( notClosedMessage );
+            }
+            String closedMessage = format( "Cursor is not mapped. See close stacktrace. Creator: %s. Current executor: %s.",
+                    creatorSignature, currentThreadSignature );
+            throw new IllegalStateException( closedMessage, closeException );
+        }
         return pagedFile.getLastPageId();
     }
 
@@ -804,6 +826,12 @@ abstract class MuninnPageCursor extends PageCursor
         {
             UnsafeUtil.setMemory( pointer, pageSize, (byte) 0 );
         }
+    }
+
+    private String getThreadSignature()
+    {
+        Thread creator = Thread.currentThread();
+        return creator.getName() + ":" + creator.getId();
     }
 
     @Override
